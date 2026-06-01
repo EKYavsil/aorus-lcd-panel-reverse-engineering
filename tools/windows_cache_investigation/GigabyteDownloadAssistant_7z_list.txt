@@ -1,0 +1,69 @@
+
+7-Zip 26.01 (x64) : Copyright (c) 1999-2026 Igor Pavlov : 2026-04-27
+
+Scanning the drive for archives:
+1 file, 89344 bytes (88 KiB)
+
+Listing archive: C:\Windows\System32\GigabyteDownloadAssistant.exe
+
+--
+Path = C:\Windows\System32\GigabyteDownloadAssistant.exe
+Type = PE
+Physical Size = 89344
+CPU = x86
+Characteristics = Executable LargeAddress
+Created = 2025-12-08 10:54:20
+Headers Size = 512
+Checksum = 93091
+Name = GigabyteDownloadAssistant.exe
+Image Size = 98304
+Section Alignment = 8192
+File Alignment = 512
+Code Size = 73216
+Initialized Data Size = 5120
+Uninitialized Data Size = 0
+Linker Version = 48.0
+OS Version = 4.0
+Image Version = 0.0
+Subsystem Version = 6.0
+Subsystem = Windows GUI
+DLL Characteristics = HighEntropyVA Relocated NX-Compatible NoSEH TerminalServerAware
+Stack Reserve = 1048576
+Stack Commit = 4096
+Heap Reserve = 1048576
+Heap Commit = 4096
+Virtual Address = 0x400000
+Comment = 
+{
+FileVersion: 23.6.2.1
+ProductVersion: 23.6.2.1
+Comments: 
+CompanyName: GIGA-BYTE TECHNOLOGY CO., LTD.
+FileDescription: Gigabyte Download Assistant
+InternalName: GigabyteDownloadAssistant.exe
+LegalCopyright: Copyright c  2019 GIGA-BYTE TECHNOLOGY CO., LTD.
+LegalTrademarks: 
+OriginalFilename: GigabyteDownloadAssistant.exe
+ProductName: APP Center
+Assembly Version: 1.0.9473.28630
+Data Directories: 16
+{
+index=1 name=IMPORT VA=0x13BD0 Size=79
+index=2 name=RESOURCE VA=0x14000 Size=4376
+index=4 name=SECURITY VA=0x13400 Size=10496
+index=5 name=BASERELOC VA=0x16000 Size=12
+index=6 name=DEBUG VA=0x13A98 Size=28
+index=12 name=IAT VA=0x2000 Size=8
+index=14 name=COM_DESCRIPTOR VA=0x2008 Size=72
+}
+}
+
+   Date      Time    Attr         Size   Compressed  Name
+------------------- ----- ------------ ------------  ------------------------
+2025-12-08 10:54:20 .....        72744        73216  .text
+                    .....         1874         1874  .rsrc\version.txt
+                    .....         3163         3163  .rsrc\MANIFEST\1
+2025-12-08 10:54:20 .....           12          512  .reloc
+2025-12-08 10:54:20 .....        10496        10496  CERTIFICATE
+------------------- ----- ------------ ------------  ------------------------
+2025-12-08 10:54:20              88289        89261  5 files

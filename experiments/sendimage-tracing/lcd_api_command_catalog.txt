@@ -1,0 +1,152 @@
+﻿# ucVga.Api.GvLcdApi
+
+## System.Boolean ucVga.Api.GvLcdApi::LedSet(System.Int32,System.Int32,T)
+Consts: 0xFF, 0x0C, 0x10, 0x20, 0x02, 0x00, 0x01
+Calls: 
+Strings: ucVga.GvLcdApi | LedSet GvVGAN30PanelAreaSet fail | LedSet fail:
+
+## System.Boolean ucVga.Api.GvLcdApi::LedSave(System.Int32)
+Consts: 0xFF, 0x0C, 0x10, 0x20, 0x02, 0x00, 0x01
+Calls: 
+Strings: ucVga.GvLcdApi | LedSet GvVGAN30PanelApply fail | LedSave fail:
+
+## System.Object ucVga.Api.GvLcdApi::LedSettingToConfig(System.Int32,ucVga.Models.LedSetting)
+Consts: 0x0C, 0x10, 0x20, 0x02, 0x0A, 0x01, 0x00
+Calls: 
+Strings: ucVga.GvLcdApi | LedSettingToConfig fail:
+
+## System.Boolean ucVga.Api.GvLcdApi::OpenLcd(System.Int32,System.Boolean)
+Consts: 0x0C, 0x05, 0x02, 0x01, 0xC2, 0x00
+Calls: ucVga.Api.I2CApi::SendData
+Strings: ucVga.GvLcdApi | OpenLcd SendData fail | OpenLcd fail:
+
+## System.String ucVga.Api.GvLcdApi::GetFWVersion(System.Int32)
+Consts: 0x0C, 0x04, 0x01, 0x0F
+Calls: ucVga.Api.I2CApi::ReadData
+Strings: ucVga.GvLcdApi | GetFWVersion ReadData fail | 0.0 | . | GetFWVersion fail:
+
+## System.Int32 ucVga.Api.GvLcdApi::GetMode(System.Int32,System.Boolean&)
+Consts: 0x0C, 0x04, 0x00, 0x02, 0x01, 0x09, 0x07
+Calls: ucVga.Api.I2CApi::ReadData
+Strings: ucVga.GvLcdApi | GetMode ReadData fail | GetMode fail:
+
+## System.Boolean ucVga.Api.GvLcdApi::SetMode(System.Int32,System.Int32)
+Consts: 0x07, 0x09, 0x0C, 0x05, 0x01, 0xC2, 0x00
+Calls: ucVga.Api.I2CApi::SendData
+Strings: ucVga.GvLcdApi | SetMode SendData fail | SetMode fail:
+
+## System.Boolean ucVga.Api.GvLcdApi::SetDisplay(System.Int32,System.UInt32,System.Int32)
+Consts: 0x0F, 0x08, 0x00, 0x05, 0x01, 0xC2
+Calls: ucVga.Api.I2CApi::SendData
+Strings: ucVga.GvLcdApi | SetDisplay SendData fail | SetDisplay fail:
+
+## System.Boolean ucVga.Api.GvLcdApi::GetDisplay(System.Int32,System.UInt32&,System.Int32&)
+Consts: 0x0C, 0x04, 0x08, 0x00, 0x01, 0x1F, 0x02
+Calls: ucVga.Api.I2CApi::ReadData
+Strings: ucVga.GvLcdApi | GetDisplay ReadData fail | GetDisplay fail:
+
+## System.Boolean ucVga.Api.GvLcdApi::SetLoop(System.Int32,System.Collections.Generic.List`1<System.Int32>,System.Int32)
+Consts: 0x1E, 0x05, 0x00, 0x06, 0x01, 0xC2
+Calls: ucVga.Api.I2CApi::SendData
+Strings: ucVga.GvLcdApi | SetLoop SendData fail | SetLoop fail:
+
+## System.Boolean ucVga.Api.GvLcdApi::GetLoop(System.Int32,System.Collections.Generic.List`1<System.Int32>&,System.Int32&)
+Consts: 0x0C, 0x08, 0x01, 0x05, 0x00, 0x03
+Calls: ucVga.Api.I2CApi::ReadData
+Strings: ucVga.GvLcdApi | GetLoop ReadData fail | GetLoop fail:
+
+## System.Boolean ucVga.Api.GvLcdApi::SetImageTpl(System.Int32,ucVga.Models.GvLcd.TPL_CFG)
+Consts: 0x12, 0x00, 0xEA, 0x01, 0xCB, 0x02, 0x55, 0x03, 0xAC, 0x04, 0x38, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0xC2
+Calls: ucVga.Api.I2CApi::SendData
+Strings: ucVga.GvLcdApi | SetImageTpl SendData fail | SetImageTpl fail:
+
+## System.Boolean ucVga.Api.GvLcdApi::GetImageTpl(System.Int32,ucVga.Models.GvLcd.TPL_CFG&)
+Consts: 0x0C, 0x05, 0x08, 0x00, 0x01, 0x02, 0x03, 0xED
+Calls: ucVga.Api.I2CApi::ReadData
+Strings: ucVga.GvLcdApi | GetImageTpl ReadData fail | SetImageTpl fail:
+
+## System.Boolean ucVga.Api.GvLcdApi::SendImage(System.Int32,ucVga.Models.GvLcd.IMG_DATA,System.Int32)
+Consts: 0x01, 0x02, 0x00, 0x18, 0x19, 0x20, 0x21, 0x22, 0x01F25800, 0x01300000, 0x01F00000, 0x01320000, 0x0C, 0xC2, 0x13, 0xF1, 0xCB, 0x55, 0x03, 0xAC, 0x04, 0x38, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0D, 0x0E, 0x0F, 0x10, 0xFF, 0x11, 0x12, 0x32, 0x64
+Calls: ucVga.Api.I2CApi::SendData
+Strings: ucVga.GvLcdApi | SendImage SendData 0xF2 0x01 fail | SendImage SendData 0xF1 fail | SendImage SendData Image Byte fail | SendImage SendData 0xF2 0x02 fail | SendImage fail:
+
+## System.Boolean ucVga.Api.GvLcdApi::Save(System.Int32)
+Consts: 0x0C, 0xC2, 0x00
+Calls: ucVga.Api.I2CApi::SendData
+Strings: ucVga.GvLcdApi | Save SendData 0xAA fail | Save fail:
+
+## System.String ucVga.Api.GvLcdApi::GetImageGifSavePath(System.Int32,System.Boolean,System.String)
+Consts: 0x03, 0x00, 0x01, 0x02
+Calls: 
+Strings: static | text | animation | .bmp | .png | Assets\ | .gif | ucVga.GvLcdApi | Save fail: | 
+
+## System.Boolean ucVga.Api.GvLcdApi::SetPCPowerOffMode(System.Int32)
+Consts: 0x0C, 0xC2, 0x00
+Calls: ucVga.Api.I2CApi::SendData
+Strings: ucVga.GvLcdApi | Save SendData 0xFA fail | Save fail:
+# ucVga.Api.GvLcdExApi
+
+## System.Boolean ucVga.Api.GvLcdExApi::LedSet(System.Int32,ucVga.Models.LedSetting)
+Consts: 0x00, 0x01, 0x64, 0x02, 0x03, 0x04, 0x12, 0x05, 0x10, 0xFF, 0x06, 0x08, 0x07, 0x09, 0x78
+Calls: ucVga.Api.I2CApi4LcdEx::SendData
+Strings: MainWindow | Apply sendData 0x12 fail | ucVga.GvLcdExApi | LedSet fail:
+
+## System.Boolean ucVga.Api.GvLcdExApi::LedSave(System.Int32)
+Consts: 0x00, 0x13, 0x01, 0x64
+Calls: ucVga.Api.I2CApi4LcdEx::SendData
+Strings: ucVga.GvLcdExApi | LedSave fail:
+
+## System.String ucVga.Api.GvLcdExApi::GetImageGifSavePath(System.Int32)
+Consts: 0x03, 0x00, 0x01, 0x02
+Calls: 
+Strings: text | static | animation | .bmp | .gif | Assets\ | ucVga.GvLcdApi | Save fail: | 
+
+## System.Boolean ucVga.Api.GvLcdExApi::OpenLcd(System.Int32,System.Boolean)
+Consts: 0x00, 0x15, 0x01, 0x02, 0x64
+Calls: ucVga.Api.I2CApi4LcdEx::SendData
+Strings: ucVga.GvLcdApi | OpenLcd SendData fail | ucVga.GvLcdExApi | OpenLcd fail:
+
+## System.String ucVga.Api.GvLcdExApi::GetFWVersion(System.Int32)
+Consts: 0x00, 0x10, 0x01, 0x04, 0x64, 0x02, 0x03
+Calls: ucVga.Api.I2CApi4LcdEx::ReadData
+Strings: ucVga.GvLcdExApi | GetFWVersion ReadData fail | 0.0 | . | GetFWVersion fail:
+
+## System.Boolean ucVga.Api.GvLcdExApi::SetMode(System.Int32,System.Int32)
+Consts: 0x00, 0x16, 0x01, 0x02, 0x64
+Calls: ucVga.Api.I2CApi4LcdEx::SendData
+Strings: ucVga.GvLcdExApi | SetMode SendData fail | SetMode fail:
+
+## System.Boolean ucVga.Api.GvLcdExApi::SetDisplay(System.Int32,System.Int32,System.Int32,System.UInt32,System.Int32,System.Windows.Media.Color,System.Double,System.Double)
+Consts: 0x00, 0x17, 0x01, 0x02, 0x64, 0x03, 0x04, 0x05, 0x06, 0x07, 0x18
+Calls: ucVga.Api.I2CApi4LcdEx::SendData
+Strings: ucVga.GvLcdExApi | SetDisplay isLCDInfoOpen SendData fail | SetDisplay fail:
+
+## System.Boolean ucVga.Api.GvLcdExApi::SetStatusPositon(System.Int32,System.Int32,System.Double,System.Double)
+Consts: 0x00, 0x18, 0x01, 0x02, 0x03, 0x64, 0x04
+Calls: ucVga.Api.I2CApi4LcdEx::SendData
+Strings: ucVga.GvLcdExApi | SetImageTpl SendData fail | SetImageTpl fail:
+
+## System.Boolean ucVga.Api.GvLcdExApi::SetLoop(System.Int32,System.Windows.Controls.ListBox,System.Int32)
+Consts: 0x01, 0x00, 0x22, 0x02, 0x03, 0x07, 0x04, 0x05, 0x64
+Calls: ucVga.Api.I2CApi4LcdEx::SendData
+Strings: ucVga.GvLcdExApi | SetLoop SendData fail | SetLoop fail:
+
+## System.Boolean ucVga.Api.GvLcdExApi::UploadData(System.Int32,System.Int32,System.Int32,System.Byte[])
+Consts: 0xFF, 0x00, 0x8C, 0x21, 0x01, 0x02, 0x03, 0x04, 0x05, 0x08, 0x06, 0x07, 0x80, 0x09, 0x0A, 0x0B, 0x0C, 0x64
+Calls: ucVga.Api.I2CApi4LcdEx::SendData
+Strings: MainWindow | SendData block {0} segment {1} fail | ucVga.GvLcdApi | SendImage fail:
+
+## System.Boolean ucVga.Api.GvLcdExApi::SetPCPowerOffMode(System.Int32)
+Consts: 0x00, 0x19, 0x01, 0x64
+Calls: ucVga.Api.I2CApi4LcdEx::SendData
+Strings: ucVga.GvLcdExApi | Save SendData 0xFA fail | Save fail:
+
+## System.Boolean ucVga.Api.GvLcdExApi::Save(System.Int32)
+Consts: 0x00, 0x24, 0x01, 0x64
+Calls: ucVga.Api.I2CApi4LcdEx::SendData
+Strings: ucVga.GvLcdApi | Save fail:
+
+## System.Boolean ucVga.Api.GvLcdExApi::SetReset(System.Int32,System.Boolean)
+Consts: 0x00, 0x14, 0x01, 0x02, 0x64
+Calls: ucVga.Api.I2CApi4LcdEx::SendData
+Strings: ucVga.GvLcdExApi | SetReset fail | SetReset fail:

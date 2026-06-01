@@ -1,0 +1,79 @@
+
+7-Zip 26.01 (x64) : Copyright (c) 1999-2026 Igor Pavlov : 2026-04-27
+
+Scanning the drive for archives:
+1 file, 1310464 bytes (1280 KiB)
+
+Listing archive: C:\Windows\System32\GigabyteUpdateService.exe
+
+--
+Path = C:\Windows\System32\GigabyteUpdateService.exe
+Type = PE
+Physical Size = 1310464
+CPU = x64
+64-bit = +
+Characteristics = Executable LargeAddress
+Created = 2025-12-08 10:58:34
+Headers Size = 1024
+Checksum = 1341736
+Name = GigabyteUpdateService.exe
+Image Size = 1318912
+Section Alignment = 4096
+File Alignment = 512
+Code Size = 114688
+Initialized Data Size = 1188864
+Uninitialized Data Size = 0
+Linker Version = 14.43
+OS Version = 6.0
+Image Version = 0.0
+Subsystem Version = 6.0
+Subsystem = Windows CUI
+DLL Characteristics = HighEntropyVA Relocated NX-Compatible TerminalServerAware
+Stack Reserve = 1048576
+Stack Commit = 4096
+Heap Reserve = 1048576
+Heap Commit = 4096
+Virtual Address = 0x140000000
+Comment = 
+{
+FileVersion: 1.0.0.16
+ProductVersion: 1.0.0.16
+CompanyName: GIGA-BYTE TECHNOLOGY CO., LTD.
+FileDescription: GIGABYTE Update Service
+InternalName: GigabyteUpdateService.exe
+LegalCopyright: Copyright (C) 2019 GIGA-BYTE TECHNOLOGY CO., LTD.
+OriginalFilename: GigabyteUpdateService.exe
+ProductName: APP Center
+Data Directories: 16
+{
+index=1 name=IMPORT VA=0x29374 Size=160
+index=2 name=RESOURCE VA=0x30000 Size=1116809
+index=3 name=EXCEPTION VA=0x2D000 Size=6168
+index=4 name=SECURITY VA=0x13D600 Size=10496
+index=5 name=BASERELOC VA=0x141000 Size=1764
+index=6 name=DEBUG VA=0x26BD0 Size=112
+index=10 name=LOAD_CONFIG VA=0x26A90 Size=320
+index=12 name=IAT VA=0x1D000 Size=1112
+}
+}
+----
+Path = .rsrc\ZIP\102
+Size = 1025881
+Packed Size = 1025881
+--
+Path = .rsrc\ZIP\102
+Type = zip
+Physical Size = 1025881
+
+   Date      Time    Attr         Size   Compressed  Name
+------------------- ----- ------------ ------------  ------------------------
+2025-03-04 21:14:18 D....            0            0  LanDriver
+2025-12-09 06:38:43 ....A          821          365  LanDriver\Install.cmd
+2022-03-25 05:54:20 ....A        53562         9913  LanDriver\rt25cx21x64.cat
+2022-03-25 05:54:20 ....A       493880        31154  LanDriver\rt25cx21x64.inf
+2022-03-25 05:54:20 ....A       620456       241484  LanDriver\rt25cx21x64.sys
+2025-03-31 00:00:54 ....A      1644116        96370  LanDriver\rt640x64.cat
+2025-03-27 17:27:42 ....A      3162216       112454  LanDriver\rt640x64.inf
+2025-03-31 00:00:56 ....A      1426920       532879  LanDriver\rt640x64.sys
+------------------- ----- ------------ ------------  ------------------------
+2025-12-09 06:38:43            7401971      1024619  7 files, 1 folders

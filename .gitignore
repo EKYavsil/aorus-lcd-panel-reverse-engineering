@@ -1,0 +1,64 @@
+# Vendor/proprietary binaries and generated binaries
+*.dll
+*.pdb
+*.bin
+*.rom
+*.fw
+*.dat
+*.pack
+*.zip
+*.7z
+*.rar
+*.tar
+*.tar.gz
+*.tgz
+*.xz
+*.msi
+
+# .NET build output
+bin/
+obj/
+*.deps.json
+*.runtimeconfig.json
+*.dll.config
+
+# Heavy/generated traces and local reverse-engineering output
+*.log
+*.bmp
+*.gif
+*.png
+*.jpg
+*.jpeg
+*.raw
+*.csv
+*_il.txt
+*_dump.txt
+*_map.txt
+*_scan.txt
+*_progress.md
+PROGRESS.md
+
+# Local-only archives and raw investigation material
+local_artifacts_not_for_github/
+research_archive/raw*/
+research_archive/*_raw/
+*_raw/
+raw*/
+
+# Ghidra and local tool state
+ghidra_*/*
+*.rep
+*.gpr
+*.gzf
+*.lock
+
+# OS/editor and IDE state
+Thumbs.db
+desktop.ini
+.vs/
+.vscode/
+*.suo
+*.user
+*.userosscache
+__pycache__/
+*.pyc
