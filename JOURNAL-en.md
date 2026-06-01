@@ -229,3 +229,104 @@ As a result of this work, the problem was reduced from the level of "the bottom 
 ## Remaining Work
 
 The static custom image problem has been solved. The corruption on the custom GIF side remains a separate research topic; the GIF path was intentionally not changed by this patch.
+
+## Follow-up Research: Custom GIF and Firmware Updater Findings
+
+After the static custom-image issue was reduced to the `F1[0x11]` erase-path selector, the investigation continued on the unresolved custom GIF path and on the native firmware updater path.
+
+The static custom-image corruption has a working narrow host-side fix. The custom GIF issue remains unresolved, but the current evidence indicates that it is related to the same broader panel-side flash erase/write subsystem. The GIF path, however, cannot be fixed safely by simply applying the same byte change used for static images.
+
+### Why the GIF Path Is Different
+
+Initial attempts to apply the same `0x02 -> 0x01` change to GIF uploads were not successful.
+
+The key reason is that `F1[0x11]` appears to do more than select an erase size or erase helper. AP firmware analysis suggests that this field is also coupled to GIF-specific timing, playback, or finalization state.
+
+In other words:
+
+```text
+0x01 works for static image erase behavior.
+0x02 appears to be expected by the GIF state machine.
+```
+
+Forcing GIF uploads onto the static-style `0x01` path can therefore remove or disturb GIF-specific semantics expected by the panel firmware.
+
+A correct GIF repair may need to fix the panel firmware's internal 64 KB erase helper rather than forcing GIF uploads onto the static 4 KB erase path from the host side. This would preserve GIF upload semantics while avoiding the unreliable erase implementation.
+
+### AP Firmware 64 KB Erase Helper Candidate
+
+Offline AP firmware analysis identified a likely 64 KB erase helper function:
+
+```text
+AP function address: 0x0000B4D0
+AP file offset:     0xA4D0
+```
+
+A potential repair direction is to replace that helper with an internal loop that performs sixteen reliable 4 KB sector erases:
+
+```text
+64 KB erase(address)
+    -> erase_4KB(address + 0x0000)
+    -> erase_4KB(address + 0x1000)
+    -> erase_4KB(address + 0x2000)
+    ...
+    -> erase_4KB(address + 0xF000)
+```
+
+This remains an offline research candidate. It has not been published as a user-facing fix.
+
+### Firmware Updater Findings
+
+#### 1. Native updater erase range may not cover the full F1.4 AP image
+
+A separate firmware updater issue was also found during offline analysis.
+
+The native LCD firmware updater appears to erase a fixed AP range:
+
+```text
+0x1000..0xEFFF
+```
+
+However, the F1.4 AP image appears to be programmed through:
+
+```text
+0x1000..0xF3D7
+```
+
+This means the F1.4 update path may program bytes beyond the fixed erase window.
+
+That mismatch is a strong candidate for explaining why firmware reinstall or firmware update behavior can be inconsistent. It may also explain why repeated firmware runs sometimes recover the panel state while a first run fails.
+
+This finding is separate from the custom GIF fix, but it is relevant because any firmware-level repair would need to be delivered safely through this updater path.
+
+#### 2. AP custom GIF playback starts from frame 1 and loops back to frame 1
+
+A second firmware-level behavior was observed in the AP custom GIF playback path: custom GIF playback does not appear to begin at frame 0.
+
+Instead, playback starts from frame 1, and when the animation wraps, it loops back to frame 1 rather than frame 0.
+
+This suggests that frame 0 may have a special role in the AP GIF state machine, such as initialization, staging, metadata, first-frame priming, or another non-normal playback function. At minimum, frame indexing cannot currently be treated as a simple host-side `0..N-1` playback sequence.
+
+This matters because host-side GIF conversion, frame ordering, reset experiments, and cleanup experiments must account for the possibility that the panel firmware intentionally skips or reserves frame 0 during runtime playback.
+
+#### 3. `F1[0x11]=0x02` currently remains the strongest model for the unreliable erase/program path
+
+The current strongest model is that `F1[0x11]=0x02` causes the AP firmware to select the 64 KB block erase path.
+
+The critical issue is not only that this path differs from the static-image 4 KB sector erase path. The related helper routines also appear to ignore failure status:
+
+```text
+64 KB erase helper:
+    status poll result is ignored
+
+page program helper:
+    status poll result is ignored
+```
+
+As a result, AP/GCC can report or proceed as if the operation succeeded even when part of the flash region was not actually erased or programmed successfully.
+
+This matches the observed failure pattern: data around and after approximately `0x01310000` can remain stale or partially unwritten, while the upload flow still appears successful from the host side.
+
+The static-image fix strongly supports this model. When the relevant static path was changed from `0x02` to `0x01`, the operation moved from the 64 KB block erase path to the 4 KB sector erase path, and the full image was written correctly.
+
+Therefore, the most likely root cause is not simply GIF file size, GIF encoding, or GCC upload UI behavior. The stronger explanation is an AP-side flash erase/program reliability problem on the `0x02` path, where status polling failures are not enforced and stale panel flash contents can survive a nominally successful upload.
