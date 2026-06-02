@@ -467,7 +467,7 @@ internal static class Program
                 Width = 710,
                 Height = 170,
                 Text =
-                    "WARNING / UYARI\r\n\r\n" +
+                    "WARNING\r\n\r\n" +
                     "This tool can flash the LCD controller firmware after you press Start. Flashing firmware is risky and can make the LCD controller unusable if the wrong package is selected or the process is interrupted.\r\n\r\n" +
                     "Select the extracted official GIGABYTE LCD firmware folder that contains AP, AP1, and GvLcdFwUpdate.dll. A common location is your extracted Downloads firmware folder, for example: Downloads\\firmware.",
                 Font = new Font(Font.FontFamily, 9.5f, FontStyle.Bold)
@@ -509,14 +509,14 @@ internal static class Program
             _startButton.Top = 510;
             _startButton.Width = 120;
             _startButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            _startButton.Text = "Start / Baslat";
+            _startButton.Text = "Start";
             _startButton.Click += async (_, _) => await StartRepairAsync();
 
             _cancelButton.Left = 606;
             _cancelButton.Top = 510;
             _cancelButton.Width = 120;
             _cancelButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            _cancelButton.Text = "Cancel / Iptal";
+            _cancelButton.Text = "Cancel";
             _cancelButton.Click += (_, _) => Close();
 
             Controls.Add(warning);
@@ -605,7 +605,7 @@ internal static class Program
         {
             _startButton.Enabled = !busy;
             _browseButton.Enabled = !busy;
-            _cancelButton.Text = busy ? "Close after finish" : "Cancel / Iptal";
+            _cancelButton.Text = busy ? "Close after finish" : "Cancel";
         }
 
         private void AppendLog(string message)

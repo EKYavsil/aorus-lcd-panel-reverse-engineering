@@ -1,12 +1,15 @@
 # Firmware Patcher Guide
 
-This project provides a guarded patcher/repair tool for the AORUS LCD AP firmware payloads used by the tested GIGABYTE LCD update package.
+This document explains how to use the AORUS LCD firmware repair tool.
 
-The executable opens a graphical repair screen. It stages patched `AP` and `AP1` files and flashes only after strict validation and after the user presses `Start / Baslat`.
+> [!WARNING]
+> Firmware flashing is risky. A wrong firmware package, wrong GPU model, interrupted flash, or unexpected updater behavior can make the LCD controller unusable.
+>
+> This tool was tested only with the official GIGABYTE LCD firmware `1.4` package for the tested AORUS RTX 5080 MASTER ICE card variant.
 
-## What It Fixes
+## What The Tool Fixes
 
-The patch repairs the AP firmware's native 64 KB erase path:
+The repair patches the AP firmware's native 64 KB erase path:
 
 ```text
 BA44 timeout: 300 -> 1000
@@ -20,11 +23,15 @@ AP file offset 0xAA4A: 4F F4 96 70 -> 40 F2 E8 30
 AP file offset 0xA534: 01 20       -> 00 BF
 ```
 
-The same changes are applied to `AP1`. The tool refuses to patch if the expected guard bytes are not present.
+The same changes are applied to `AP1`.
+
+Do not manually apply these offsets to other firmware versions. These offsets are valid only for the exact tested AP/AP1 SHA256 listed below.
 
 ## Input Requirements
 
-Use the locally obtained official GIGABYTE LCD firmware `1.4` package for the tested AORUS RTX 5080 ICE LCD panel and extract or stage the files so one folder contains:
+Use the locally obtained official GIGABYTE LCD firmware `1.4` package for the exact tested card model.
+
+The selected folder must contain:
 
 ```text
 AP
@@ -42,50 +49,154 @@ AP1 SHA256:   DFDBB0BFCE3885C0D6438B6D9E07D06AFD62B156DEDF6B72FEA92762F6D6FB9C
 Updater DLL:  DE23086EDFD6EEBEDB5E97562CEF25AE41D44531F215FF23CA434DFDD63ECB70
 ```
 
-The repair tool accepts only this exact tested AP/AP1 payload. Other firmware versions or GPU variants should be treated as unsupported unless their AP/AP1 and updater DLL are separately analyzed and validated.
+The repair tool accepts only this exact tested AP/AP1 payload and updater DLL. Other firmware versions or GPU variants are unsupported unless their AP/AP1 payloads and updater DLL have been separately analyzed and validated.
 
-## Usage
+## Preparing The Official Firmware Folder
 
-For non-technical users, download `AorusLcdFirmwarePatcher-win-x64-self-contained.exe` from GitHub Releases and run it directly. It opens a graphical screen with:
+For non-technical users, the recommended preparation flow is:
+
+1. Download the official LCD firmware `1.4` package from the GIGABYTE support page for the exact card model.
+2. Do not download firmware packages from third-party mirrors.
+3. The official GIGABYTE package is downloaded as an `.exe`
+4. Run the official GIGABYTE LCD firmware `1.4` `.exe` package so it creates/extracts its firmware working folder.
+5. Locate the created/extracted folder that contains:
+
+   ```text
+   AP
+   AP1
+   GvLcdFwUpdate.dll
+   ```
+
+6. Select that created/extracted folder in the patcher GUI.
+
+Do not rename, edit, replace, or mix `AP`, `AP1`, or `GvLcdFwUpdate.dll` from different firmware packages.
+
+## Running The Tool
+
+For non-technical users, download the prebuilt Windows x64 executable from GitHub Releases when available:
+
+```text
+AorusLcdFirmwarePatcher-win-x64-self-contained.exe
+```
+
+Run the GUI as Administrator before pressing `Start`.
+
+The GUI provides:
 
 - a firmware flashing warning;
-- a folder selector for the extracted official GIGABYTE LCD firmware `1.4` folder;
+- a folder selector for the created/extracted official firmware folder;
 - a default suggested location when one can be found;
-- `Start / Baslat` and `Cancel / Iptal` buttons.
+- a `Start` button;
+- a `Cancel` button.
 
-The GUI does not validate or flash until `Start / Baslat` is pressed.
+The tool does not validate or flash until `Start` is pressed.
 
-The release executable is self-contained and does not require the Microsoft .NET Desktop Runtime. It is intentionally distributed as a GitHub Release asset rather than committed into the repository because the runtime-free build is large.
+After `Start`, the tool:
 
-After `Start / Baslat`, the tool validates the selected folder, creates a stage folder, patches `AP`/`AP1`, validates the patched output, and then flashes through the official updater DLL.
+1. validates the selected folder;
+2. verifies the official AP/AP1 size and SHA256;
+3. verifies the official updater DLL SHA256;
+4. creates a local stage folder;
+5. patches `AP` and `AP1`;
+6. validates the patched output;
+7. flashes through the official updater DLL.
 
-If the folder does not contain the exact tested official firmware payload, the tool stops before flashing.
+If any guard fails, the tool stops before flashing.
+
+## Stage Folder
+
+During repair, the tool creates a local stage folder under:
+
+```text
+%LOCALAPPDATA%\AorusLcdFirmwareRepair\stage
+```
+
+The stage folder contains:
+
+```text
+AP
+AP1
+GvLcdFwUpdate.dll
+patch-manifest.json
+patch-report.md
+repair-flash.log
+```
+
+Additional updater/runtime files may also be staged if they are present in the selected official firmware working folder and required by the updater DLL.
 
 The generated manifest stores file names rather than absolute local paths, so it can be shared without exposing the user's Windows profile path.
 
-The flash path refuses to continue unless all of these are true:
+## Guard Conditions
 
-- The official input AP/AP1 match the known tested SHA256.
-- The official `GvLcdFwUpdate.dll` matches the known tested SHA256.
-- The staged AP/AP1 contain the expected patch bytes.
-- The staged AP/AP1 hash is `FFD3ACBA17D8C338CDE7FBFAFF71DE979C7E6847CD7E577A93183BF8AE3EC737`.
-- The staged AP/AP1 CRC16 over `0x28..EOF` is `0xFFFE`.
-- The process is running on Windows as Administrator.
-- The user has pressed `Start / Baslat` in the GUI.
+The tool refuses to continue unless all required checks pass.
 
-Repair mode writes `repair-flash.log` into the stage folder during flashing.
+Input checks:
 
-Expected original AP/AP1 CRC16 over `0x28..EOF`:
+- `AP` exists.
+- `AP1` exists.
+- `GvLcdFwUpdate.dll` exists.
+- `AP` and `AP1` are both 58328 bytes.
+- `AP` and `AP1` are identical.
+- `AP` and `AP1` match the known tested SHA256.
+- `GvLcdFwUpdate.dll` matches the known tested SHA256.
+- Offset `0xAA4A` contains `4F F4 96 70`.
+- Offset `0xA534` contains `01 20`.
+
+Patched output checks:
+
+- staged `AP` and `AP1` are both 58328 bytes;
+- staged `AP` and `AP1` are identical;
+- staged `AP` and `AP1` contain the expected patch bytes;
+- staged `AP` and `AP1` have SHA256:
+
+  ```text
+  FFD3ACBA17D8C338CDE7FBFAFF71DE979C7E6847CD7E577A93183BF8AE3EC737
+  ```
+
+- staged `AP` and `AP1` have CRC16 over `0x28..EOF`:
+
+  ```text
+  0xFFFE
+  ```
+
+Runtime checks:
+
+- the process is running on Windows;
+- the process is running as Administrator;
+- the user pressed `Start` in the GUI.
+
+## Expected Original Values
+
+Original AP/AP1 CRC16 over `0x28..EOF`:
 
 ```text
 0x4560
 ```
 
-Expected patched AP/AP1 values:
+Original AP/AP1 SHA256:
 
 ```text
-SHA256: FFD3ACBA17D8C338CDE7FBFAFF71DE979C7E6847CD7E577A93183BF8AE3EC737
-CRC16:  0xFFFE
+DFDBB0BFCE3885C0D6438B6D9E07D06AFD62B156DEDF6B72FEA92762F6D6FB9C
+```
+
+Original updater DLL SHA256:
+
+```text
+DE23086EDFD6EEBEDB5E97562CEF25AE41D44531F215FF23CA434DFDD63ECB70
+```
+
+## Expected Patched Values
+
+Patched AP/AP1 SHA256:
+
+```text
+FFD3ACBA17D8C338CDE7FBFAFF71DE979C7E6847CD7E577A93183BF8AE3EC737
+```
+
+Patched AP/AP1 CRC16 over `0x28..EOF`:
+
+```text
+0xFFFE
 ```
 
 ## Build From Source
@@ -96,32 +207,46 @@ Install the .NET 8 SDK and run:
 dotnet build .\AorusLcdFirmwarePatcher.csproj -c Release
 ```
 
-Build the standalone executable used for GitHub Releases:
+Build the standalone Windows x64 executable used for GitHub Releases:
 
 ```powershell
 dotnet publish .\AorusLcdFirmwarePatcher.csproj -c Release -r win-x64 -p:PublishSingleFile=true --self-contained true -o .\publish\firmware-patcher-self-contained
 ```
 
-## Guard Conditions
-
-The patcher checks:
-
-- `AP` and `AP1` exist.
-- `GvLcdFwUpdate.dll` exists.
-- `AP` and `AP1` are both 58328 bytes.
-- `AP` and `AP1` are identical.
-- Offset `0xAA4A` contains `4F F4 96 70`.
-- Offset `0xA534` contains `01 20`.
-- `AP` and `AP1` match the known tested SHA256.
-
-If any guard fails, the tool stops.
+The project is buildable from source, but it does not currently claim deterministic/reproducible release builds.
 
 ## What This Tool Does Not Do
 
-- It does not include GIGABYTE firmware files.
-- It does not modify `GvLcdFwUpdate.dll`.
-- It does not modify GIGABYTE Control Center files.
-- It does not replace live files.
-- It does not run GIGABYTE updater EXEs.
-- It does not start or stop services.
-- It does not edit registry or Program Files.
+The tool does not:
+
+- include GIGABYTE firmware files;
+- include GIGABYTE DLLs in the repository;
+- modify `GvLcdFwUpdate.dll`;
+- modify GIGABYTE Control Center files;
+- replace live files in Program Files;
+- run GIGABYTE updater EXEs;
+- start or stop services;
+- edit the Windows registry;
+- support arbitrary firmware versions;
+- support arbitrary GPU variants.
+
+## If The Tool Fails
+
+If validation fails, do not try to bypass the check.
+
+Common causes:
+
+- wrong firmware version;
+- wrong GPU model package;
+- official package did not create/extract the expected firmware folder;
+- files copied from different packages;
+- modified vendor files;
+- missing Administrator elevation.
+
+Check the message shown by the GUI and inspect:
+
+```text
+%LOCALAPPDATA%\AorusLcdFirmwareRepair\stage\repair-flash.log
+```
+
+when a flashing attempt has already started.

@@ -1,100 +1,106 @@
 # AORUS LCD Panel Reverse Engineering
 
-Independent reverse engineering notes and a reproducible firmware patcher for the GIGABYTE AORUS RTX 5080 ICE LCD panel custom image/GIF corruption bug.
+Independent reverse-engineering notes and an MIT-licensed firmware repair tool for the custom image/GIF corruption issue observed on the GIGABYTE AORUS GeForce RTX 5080 MASTER ICE LCD panel.
+
+> [!WARNING]
+> This project contains an experimental firmware repair tool. Firmware flashing is inherently risky and can make the LCD controller unusable if the wrong package is selected, the wrong hardware is used, or the process is interrupted.
+>
+> The repair tool was tested only with the official GIGABYTE LCD firmware `1.4` package for the tested AORUS RTX 5080 MASTER ICE card variant. Do not use it on other GPU models, firmware versions, or LCD packages unless they have been separately analyzed and validated.
+>
+> Prefer an official GIGABYTE firmware/software fix when one is available.
 
 ## Practical Summary
 
-The panel-side AP firmware has a broken native 64 KB erase path. The failure presents as custom static images with a black/stale lower region and custom GIFs that upload but display incorrectly, freeze, or fall back into invalid panel state.
+The observed issue affected custom LCD media uploaded through GIGABYTE Control Center:
 
-This repository contains a source-available repair tool that generates repaired `AP` and `AP1` firmware payloads from a locally obtained official GIGABYTE LCD firmware package.
+- Custom static images could update only the upper part of the LCD.
+- The lower region could remain black or stale.
+- Custom GIFs could upload but display incorrectly, freeze, stay on loading, or leave the panel in an inconsistent state.
+- Built-in/default LCD modes could still display correctly.
 
-The currently supported/tested input is the official GIGABYTE LCD firmware `1.4` package for the tested AORUS RTX 5080 ICE LCD panel. The tool intentionally validates the exact `AP`/`AP1` and updater DLL hashes before flashing; other firmware versions or card variants should be treated as unsupported until separately analyzed.
+The investigation indicates that the panel-side AP firmware has a defective native 64 KB flash erase path. The local repair patches the AP firmware payload so the native 64 KB erase path waits longer and no longer hides status-poll failure from the caller.
 
-The tool does **not** include GIGABYTE firmware, DLLs, installers, extracted packages, raw traces, or proprietary binaries. It asks the user to select a locally extracted official GIGABYTE LCD firmware folder, validates it strictly, stages patched `AP`/`AP1`, and starts flashing only after the user presses `Start / Baslat`.
+This repository contains:
 
-For non-technical users, the prebuilt Windows x64 repair executable is intended to be distributed as a GitHub Release asset. It is self-contained and does not require the Microsoft .NET Desktop Runtime. The executable is not committed to this repository because the runtime-free build is large. Users who want full reproducibility can build the same executable from `src/Program.cs` with the .NET 8 SDK.
+- public research notes;
+- buildable source code for a guarded repair tool;
+- documentation for using the tool safely;
+- no GIGABYTE firmware files, DLLs, installers, extracted packages, or proprietary binaries.
 
-## Root Cause
-
-The final local fix repairs the AP firmware's own 64 KB erase behavior instead of bypassing it from the Windows upload path.
-
-Two AP firmware sites were identified:
+## Current Status
 
 ```text
-FUN_0000BA44: SPI status poll helper
-FUN_0000B4D0: native 64 KB erase helper
+Static custom image corruption: fixed locally by AP firmware repair
+Custom GIF corruption:          fixed locally by AP firmware repair
+Public deliverable:             guarded source code + optional GitHub Release executable
+```
+
+The tool does not include vendor firmware or vendor binaries. It asks the user to select a locally created/extracted official GIGABYTE LCD firmware folder, validates the expected files strictly, stages patched `AP`/`AP1` payloads, and flashes only after the user presses `Start`.
+
+## Supported Hardware And Firmware
+
+Confirmed local test target:
+
+```text
+GPU:  GIGABYTE AORUS GeForce RTX 5080 MASTER ICE 16G
+SSID: 0x418C
+VID:  0x10DE
+DID:  0x2C02
+SVID: 0x1458
+```
+
+Confirmed firmware package:
+
+```text
+Official LCD firmware: GV-N5080AORUSM_ICE-16GD_LCD_F1.4.exe
+AP size:               58328 bytes
+AP SHA256:             DFDBB0BFCE3885C0D6438B6D9E07D06AFD62B156DEDF6B72FEA92762F6D6FB9C
+AP1 SHA256:            DFDBB0BFCE3885C0D6438B6D9E07D06AFD62B156DEDF6B72FEA92762F6D6FB9C
+GvLcdFwUpdate.dll:     DE23086EDFD6EEBEDB5E97562CEF25AE41D44531F215FF23CA434DFDD63ECB70
+```
+
+Other firmware versions or GPU variants should be treated as unsupported until their AP/AP1 payloads and updater DLL have been separately analyzed.
+
+## Repair Tool Usage
+
+- [Firmware patcher guide](FIRMWARE_PATCHER.md)
+- [Safety notes](SAFETY.md)
+
+## Root Cause Summary
+
+Two AP firmware sites were identified as central to the issue:
+
+```text
+FUN_0000BA44: SPI status/WIP poll helper
+FUN_0000B4D0: native 64 KB block erase helper
 ```
 
 The bug has two parts:
 
 ```text
 BA44 polls erase completion with timeout 300, which is too short for the observed 64 KB erase path.
-B4D0 calls BA44 after issuing 0xD8 64 KB erase, then overwrites the result with success.
+B4D0 calls BA44 after issuing a 0xD8 64 KB erase, then overwrites the result with success.
 ```
 
-The repaired payload changes:
+The local repair changes:
 
 ```text
 AP file offset 0xAA4A: 4F F4 96 70 -> 40 F2 E8 30   ; BA44 timeout 300 -> 1000
-AP file offset 0xA534: 01 20       -> 00 BF         ; B4D0 propagates BA44 result
+AP file offset 0xA534: 01 20       -> 00 BF         ; B4D0 no longer forces success
 ```
 
-In local testing, this repaired the native 64 KB erase path and allowed full-screen static images and custom GIFs to write correctly.
+The same changes are applied to `AP1`.
 
-## Repair Tool Usage
-
-Start with [FIRMWARE_PATCHER.md](FIRMWARE_PATCHER.md).
-
-The patcher expects a local extracted official GIGABYTE LCD firmware `1.4` folder containing:
-
-```text
-AP
-AP1
-GvLcdFwUpdate.dll
-```
-
-Download `AorusLcdFirmwarePatcher-win-x64-self-contained.exe` from GitHub Releases and run it directly. The graphical repair screen shows a firmware flashing warning, asks for the extracted official firmware folder, and provides `Start / Baslat` and `Cancel / Iptal` buttons.
-
-The tool does not validate or flash until the user selects a folder and presses `Start / Baslat`.
-
-If the selected folder is not the exact tested official firmware package, the tool stops before flashing.
-
-During repair, it creates a local stage folder under:
-
-```text
-%LOCALAPPDATA%\AorusLcdFirmwareRepair\stage
-```
-
-The stage folder contains patched `AP`/`AP1`, required official updater DLL/runtime files, `patch-manifest.json`, `patch-report.md`, and `repair-flash.log`.
-
-## Build From Source
-
-Install the .NET 8 SDK, then build:
-
-```powershell
-dotnet build .\AorusLcdFirmwarePatcher.csproj -c Release
-```
-
-Create the standalone Windows executable used for GitHub Releases:
-
-```powershell
-dotnet publish .\AorusLcdFirmwarePatcher.csproj -c Release -r win-x64 -p:PublishSingleFile=true --self-contained true -o .\publish\firmware-patcher-self-contained
-```
-
-## Safety Boundary
-
-Read [SAFETY.md](SAFETY.md) before using the patched firmware payloads.
-
-Firmware flashing can leave the LCD controller unusable if the wrong package, wrong model, interrupted update, or bad payload is used. The repair command therefore refuses to flash unless the exact tested AP/AP1 hash, updater DLL hash, patched AP/AP1 hash, CRC, patch bytes, administrator context, and confirmation token are all present.
+Do not manually apply these offsets to other firmware versions. These offsets are valid only for the exact tested AP/AP1 SHA256 listed above.
 
 ## Investigation Highlights
 
-- Verified the GPU and LCD controller were reachable through the existing GIGABYTE/NVAPI I2C path.
-- Proved static `pData` rendered correctly offline, eliminating the image converter as the root cause.
+- Verified that the GPU and LCD controller were reachable through the existing GIGABYTE/NVAPI I2C path.
+- Proved that static image `pData` rendered correctly offline, eliminating the image converter as the root cause.
 - Reconstructed relevant LCD commands including `F1`, `F2`, `E1`, `E5`, `E7`, `F3`, and `AA`.
-- Confirmed the Windows upload path reported success even when panel flash state was stale or partially erased.
+- Confirmed that the Windows upload path could report success even when panel flash state was stale or partially erased.
 - Built and tested a temporary static-image host workaround, then superseded it with the AP firmware root-cause fix.
-- Mapped the AP firmware native 64 KB erase helper and proved the short timeout/failure masking defect.
+- Mapped the AP firmware native 64 KB erase helper and identified the short timeout/failure-masking defect.
 - Verified the native AP repair in local testing.
 
 ## Repository Layout
@@ -102,14 +108,14 @@ Firmware flashing can leave the LCD controller unusable if the wrong package, wr
 ```text
 AorusLcdFirmwarePatcher.csproj       Root .NET project for the firmware repair tool
 src/Program.cs                       Patcher source code
-GitHub Release asset                 Optional runtime-free prebuilt executable, not committed
 FIRMWARE_PATCHER.md                  Patcher usage, validation, and output format
 SAFETY.md                            Firmware safety notes and boundaries
+GIGABYTE_BUG_REPORT.md               Vendor-facing technical issue report
 docs/evidence/                       Final success notes and test evidence
 docs/gif-firmware-analysis/          AP/GIF firmware investigation reports
 docs/analysis/                       Earlier protocol and SendImage analysis
 docs/research-log/                   Curated research history and artifact map
-experiments/                         Historical traces and rejected hypotheses
+experiments/                         Historical experiments and rejected hypotheses, not required for normal use
 tools/firmware-analysis/             Offline AP firmware analysis helpers
 tools/firmware-harness/              Controlled firmware harness source
 tools/host-analysis/                 Host-side managed assembly scanners
@@ -127,18 +133,18 @@ Useful starting points:
 - [English investigation journal](JOURNAL-en.md)
 - [Turkish investigation journal](JOURNAL-tr.md)
 
-## Current Status
-
-```text
-Static custom image corruption: fixed locally by AP firmware patch
-Custom GIF corruption: fixed locally by AP firmware patch
-Final product in this repo: safe payload patcher plus explicitly confirmed repair flashing mode
-```
-
 ## AI Assistance
 
-Parts of this investigation, documentation cleanup, code review, and reverse-engineering workflow were assisted by OpenAI Codex/ChatGPT. The technical claims in this repository are based on included traces, offline firmware analysis notes, source code, and user-observed test results rather than AI output alone.
+Parts of this investigation, documentation cleanup, code review, and reverse-engineering workflow were assisted by OpenAI Codex/ChatGPT. The technical claims in this repository are based on included traces, offline firmware analysis notes, source code, my own hardware testing, and findings validated through my direct guidance and review, rather than AI output alone.
+
+## License
+
+The original source code and documentation in this repository are licensed under the MIT License.
+
+This license does not grant rights to GIGABYTE software, firmware, DLLs, installers, assets, trademarks, update packages, or other proprietary vendor material.
 
 ## Disclaimer
 
-This is an independent reverse-engineering investigation. It is not affiliated with, endorsed by, or supported by GIGABYTE. Use at your own risk. Do not redistribute proprietary vendor binaries or firmware files.
+This is an independent reverse-engineering investigation. It is not affiliated with, endorsed by, or supported by GIGABYTE.
+
+Use at your own risk. Do not redistribute proprietary vendor binaries, firmware files, update packages, or extracted vendor assets.

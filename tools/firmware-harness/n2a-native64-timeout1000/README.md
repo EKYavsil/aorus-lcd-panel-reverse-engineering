@@ -33,5 +33,3 @@ Those files are proprietary or machine-specific and must be supplied locally by 
 
 This is research code retained for reproducibility and auditability. The public repository does not include the live launcher script, AP/AP1 payloads, vendor DLLs, compiled binaries, live logs, or live flashing code.
 
-The supported public tool is the root firmware payload patcher, which generates patched files only and does not flash firmware.
-
