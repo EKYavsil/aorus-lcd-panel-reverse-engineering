@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Reverse-engineering notes and firmware repair details for the AORUS RTX 5080 MASTER ICE LCD custom image and GIF corruption bug.">
+  <title>AORUS LCD Panel Reverse Engineering</title>
+  <link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav" aria-label="Primary navigation">
+      <a class="brand" href="#top">AORUS LCD RE</a>
+      <div class="nav-links">
+        <a href="#evidence">Evidence</a>
+        <a href="#root-cause">Root Cause</a>
+        <a href="#repair">Repair</a>
+        <a href="#research">Research</a>
+        <a href="https://github.com/EKYavsil/aorus-lcd-panel-reverse-engineering">GitHub</a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="hero-media" aria-hidden="true">
+        <img src="evidence/images/after-repair.jpg" alt="">
+      </div>
+      <div class="hero-content">
+        <p class="eyebrow">Independent firmware reverse engineering</p>
+        <h1>AORUS LCD custom image and GIF corruption, traced to the AP firmware erase path.</h1>
+        <p class="hero-copy">
+          A full investigation of a GIGABYTE AORUS RTX 5080 MASTER ICE LCD panel bug where custom static images and GIFs could upload successfully but display stale, partial, black, or broken content.
+        </p>
+        <div class="hero-actions">
+          <a class="button primary" href="#root-cause">Read the technical finding</a>
+          <a class="button secondary" href="https://github.com/EKYavsil/aorus-lcd-panel-reverse-engineering">View repository</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="status-band" aria-label="Project status">
+      <div>
+        <span class="status-label">Static images</span>
+        <strong>Fixed locally</strong>
+      </div>
+      <div>
+        <span class="status-label">Custom GIFs</span>
+        <strong>Fixed locally</strong>
+      </div>
+      <div>
+        <span class="status-label">Public release</span>
+        <strong>Guarded source + repair tool</strong>
+      </div>
+    </section>
+
+    <section class="section intro">
+      <div class="section-heading">
+        <p class="eyebrow">What happened</p>
+        <h2>The upload path looked successful, but the panel flash state was not reliable.</h2>
+      </div>
+      <div class="text-block">
+        <p>
+          The original symptom looked like a host-side converter or upload issue: static images could update only the upper part of the LCD while the lower region stayed black or stale, and GIF uploads could freeze, stay on loading, or display corrupted frames.
+        </p>
+        <p>
+          Offline rendering proved that the static image payload entering the upload path was complete. I2C tracing showed that host-side chunking and visible transport results were not enough to explain the failure. The investigation moved from Windows-side upload code into the LCD controller AP firmware.
+        </p>
+      </div>
+    </section>
+
+    <section id="evidence" class="section">
+      <div class="section-heading">
+        <p class="eyebrow">Visual evidence</p>
+        <h2>Before and after the AP firmware repair.</h2>
+      </div>
+      <div class="evidence-grid">
+        <figure>
+          <img src="evidence/images/before-corruption.png" alt="AORUS LCD panel showing corrupted custom media before repair">
+          <figcaption>
+            <strong>Before repair.</strong>
+            Custom media could remain partially corrupted, stale, or incomplete even after upload.
+          </figcaption>
+        </figure>
+        <figure>
+          <img src="evidence/images/after-repair.jpg" alt="AORUS LCD panel showing full custom media after repair">
+          <figcaption>
+            <strong>After repair.</strong>
+            The same custom media path can update the full panel after the firmware-side fix.
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section id="root-cause" class="section technical">
+      <div class="section-heading">
+        <p class="eyebrow">Root cause</p>
+        <h2>A defective native 64 KB erase path inside the panel AP firmware.</h2>
+      </div>
+      <div class="technical-grid">
+        <article class="panel">
+          <h3>Short erase-completion wait</h3>
+          <p>
+            The AP firmware's SPI status/WIP poll helper waited with a timeout count of <code>300</code>, which was too short for the observed native 64 KB erase path.
+          </p>
+          <pre><code>FUN_0000BA44: SPI status/WIP poll helper</code></pre>
+        </article>
+        <article class="panel">
+          <h3>Failure hidden from caller</h3>
+          <p>
+            The 64 KB erase helper issued the block erase, called the status poll helper, then forced success instead of propagating the poll result.
+          </p>
+          <pre><code>FUN_0000B4D0: native 64 KB block erase helper</code></pre>
+        </article>
+      </div>
+      <div class="code-panel">
+        <p class="code-title">Validated local AP/AP1 repair for the tested firmware package</p>
+        <pre><code>AP offset 0xAA4A: 4F F4 96 70 -> 40 F2 E8 30   ; timeout 300 -> 1000
+AP offset 0xA534: 01 20       -> 00 BF         ; preserve poll result</code></pre>
+      </div>
+    </section>
+
+    <section class="section warning-section">
+      <div class="section-heading">
+        <p class="eyebrow">Scope and safety</p>
+        <h2>This repair is validated only for the tested RTX 5080 MASTER ICE firmware package.</h2>
+      </div>
+      <div class="text-block">
+        <p>
+          My assessment is that similar symptoms may exist across more AORUS LCD panel firmware builds, but the published repair tool, hashes, offsets, and flashing flow are validated only against the official GIGABYTE LCD firmware 1.4 package for the tested AORUS RTX 5080 MASTER ICE card variant.
+        </p>
+        <p>
+          Other models should not reuse these offsets blindly. The correct approach is to analyze that model's AP/AP1 firmware payloads and inspect the corresponding 300-count status-poll timeout and 64 KB erase result-propagation path.
+        </p>
+      </div>
+    </section>
+
+    <section id="repair" class="section repair">
+      <div class="section-heading">
+        <p class="eyebrow">Repair tool</p>
+        <h2>A guarded Windows repair tool built around official local firmware files.</h2>
+      </div>
+      <div class="repair-list">
+        <div>
+          <span class="step">01</span>
+          <p>Select the locally extracted official GIGABYTE LCD firmware folder containing <code>AP</code>, <code>AP1</code>, and <code>GvLcdFwUpdate.dll</code>.</p>
+        </div>
+        <div>
+          <span class="step">02</span>
+          <p>The tool validates exact file sizes, SHA256 hashes, guard bytes, patched output hash, and CRC before flashing.</p>
+        </div>
+        <div>
+          <span class="step">03</span>
+          <p>Flashing starts only after the user presses Start in the GUI. The repository does not redistribute GIGABYTE firmware or DLLs.</p>
+        </div>
+      </div>
+      <div class="link-row">
+        <a href="https://github.com/EKYavsil/aorus-lcd-panel-reverse-engineering/blob/main/JOURNAL-en.md">Step-by-step investigation journal</a>
+        <a href="https://github.com/EKYavsil/aorus-lcd-panel-reverse-engineering/blob/main/FIRMWARE_PATCHER.md">Firmware patcher guide</a>
+        <a href="https://github.com/EKYavsil/aorus-lcd-panel-reverse-engineering/blob/main/SAFETY.md">Safety notes</a>
+        <a href="https://github.com/EKYavsil/aorus-lcd-panel-reverse-engineering/blob/main/GIGABYTE_BUG_REPORT.md">Vendor-facing report</a>
+      </div>
+    </section>
+
+    <section id="research" class="section research">
+      <div class="section-heading">
+        <p class="eyebrow">Research trail</p>
+        <h2>The final fix came after rejecting simpler host-side explanations.</h2>
+      </div>
+      <ol class="timeline">
+        <li>
+          <span>01</span>
+          <p>Confirmed the GPU and LCD controller were reachable through the existing GIGABYTE/NVAPI I2C path.</p>
+        </li>
+        <li>
+          <span>02</span>
+          <p>Captured and rendered static image payloads offline, ruling out the image converter as the main failure.</p>
+        </li>
+        <li>
+          <span>03</span>
+          <p>Mapped the host upload sequence and LCD commands such as <code>F1</code>, <code>F2</code>, <code>E1</code>, <code>E5</code>, <code>E7</code>, <code>F3</code>, and <code>AA</code>.</p>
+        </li>
+        <li>
+          <span>04</span>
+          <p>Moved into AP firmware analysis after clean apply sequences and host-side patching did not explain persistent corruption.</p>
+        </li>
+        <li>
+          <span>05</span>
+          <p>Validated that repairing the native 64 KB erase path fixed both static images and custom GIFs locally.</p>
+        </li>
+      </ol>
+      <div class="link-row">
+        <a href="https://github.com/EKYavsil/aorus-lcd-panel-reverse-engineering/blob/main/JOURNAL-en.md">Read the full step-by-step journal</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>Independent reverse-engineering project. Not affiliated with or endorsed by GIGABYTE.</p>
+    <p><a href="https://github.com/EKYavsil/aorus-lcd-panel-reverse-engineering">Repository</a></p>
+  </footer>
+</body>
+</html>

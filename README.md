@@ -20,6 +20,8 @@ The observed issue affected custom LCD media uploaded through GIGABYTE Control C
 
 The investigation indicates that the panel-side AP firmware has a defective native 64 KB flash erase path. The local repair patches the AP firmware payload so the native 64 KB erase path waits longer and no longer hides status-poll failure from the caller.
 
+Community workarounds such as reinstalling LCD firmware, reinstalling GIGABYTE software, changing Windows language/region settings, clearing caches, or forcing the panel back into a default mode may appear to fix the issue on some systems. My assessment is that these workarounds likely disturb or refresh enough panel/software state to get lucky temporarily, but they do not repair the underlying AP firmware erase defect. If custom static images or custom GIFs continue to be uploaded, the same corruption pattern can return. The stable fix identified in this repository targets the firmware-side root cause directly.
+
 This repository contains:
 
 - public research notes;
@@ -36,6 +38,16 @@ Public deliverable:             guarded source code + optional GitHub Release ex
 ```
 
 The tool does not include vendor firmware or vendor binaries. It asks the user to select a locally created/extracted official GIGABYTE LCD firmware folder, validates the expected files strictly, stages patched `AP`/`AP1` payloads, and flashes only after the user presses `Start`.
+
+## Visual Evidence
+
+Before repair:
+
+![Corrupted AORUS LCD custom media before repair](docs/evidence/images/before-corruption.png)
+
+After the AP firmware repair:
+
+![AORUS LCD custom media after AP firmware repair](docs/evidence/images/after-repair.jpg)
 
 ## Supported Hardware And Firmware
 
@@ -60,6 +72,23 @@ GvLcdFwUpdate.dll:     DE23086EDFD6EEBEDB5E97562CEF25AE41D44531F215FF23CA434DFDD
 ```
 
 Other firmware versions or GPU variants should be treated as unsupported until their AP/AP1 payloads and updater DLL have been separately analyzed.
+
+## Notes For Other AORUS LCD Models
+
+My personal assessment is that this may be a broader chronic defect in the AORUS LCD panel firmware family, not only a one-off issue on my unit. However, my hardware testing, repair tool, hashes, offsets, and flashing workflow are validated only for the AORUS GeForce RTX 5080 MASTER ICE firmware package listed above.
+
+If you are seeing similar custom image or custom GIF corruption on another AORUS LCD model, do not apply this patcher or these offsets directly. Use the reverse-engineering method documented in this repository to analyze that model's own AP/AP1 firmware payloads.
+
+The most important technical point to inspect is the native 64 KB erase completion path:
+
+```text
+SPI status/WIP poll timeout around the 300-count wait site
+64 KB erase helper result propagation after the status poll
+```
+
+On the tested firmware, this corresponded to the `FUN_0000BA44` poll helper and the `FUN_0000B4D0` 64 KB erase helper. Other firmware builds may have different addresses, offsets, instruction encodings, timing constants, CRC requirements, and updater behavior.
+
+If you have the required reverse-engineering and firmware-safety experience, the equivalent repair should be developed at that model's corresponding timeout/result-propagation site, then validated offline before any live flash attempt.
 
 ## Repair Tool Usage
 

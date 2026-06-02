@@ -41,6 +41,12 @@ release-assets/
 *_progress.md
 PROGRESS.md
 
+# Public evidence images intentionally used by README and GitHub Pages
+!docs/evidence/images/
+!docs/evidence/images/*.png
+!docs/evidence/images/*.jpg
+!docs/evidence/images/*.jpeg
+
 # Local-only archives and raw investigation material
 local_artifacts_not_for_github/
 research_archive/raw*/
