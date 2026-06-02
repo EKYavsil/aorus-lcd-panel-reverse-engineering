@@ -1,0 +1,105 @@
+﻿{
+  "scope": "offline dry-run only; does not load native DLLs; does not execute updater; does not call I2C",
+  "stage": "offline_patch_candidates",
+  "config": {
+    "FW_Ver": "1.4",
+    "FW_File": "AP",
+    "FW_File1": "AP1",
+    "FW_FileSize": "58328",
+    "FW_FileSize1": "58328",
+    "Model_SSID": "418C",
+    "IAP_CODE_SIZE": "4096",
+    "IAP_ADDRESS": "68",
+    "IAP_ADDRESS1": "70",
+    "AP_ADDRESS": "194",
+    "AP_DataSize": "256",
+    "I2C_Speed": "100"
+  },
+  "decoded_addresses": {
+    "IAP_ADDRESS": "0x44",
+    "IAP_ADDRESS1": "0x46",
+    "AP_ADDRESS": "0xC2"
+  },
+  "files": {
+    "AP_primary_name_from_config": {
+      "path": "offline_patch_candidates/AP",
+      "exists": false
+    },
+    "AP_fallback_name_from_config": {
+      "path": "offline_patch_candidates/AP1",
+      "exists": false
+    },
+    "staged_option3_AP": {
+      "path": "offline_patch_candidates/AP_option3_16x4k.bin",
+      "exists": true,
+      "size": 58328,
+      "sha256": "821F6F3A809A0D7E3050B7284714EDF603B474C194E9E8F84D481B6CF872C643",
+      "crc16_over_0x28_to_end": "0x4BDD",
+      "header_0x00_0x28_sha256": "6717F8D3CB743EFB75CE2725E54EC6A42C6622066505213CFC54241EF9AEB717"
+    },
+    "staged_option3_AP1": {
+      "path": "offline_patch_candidates/AP1_option3_16x4k.bin",
+      "exists": true,
+      "size": 58328,
+      "sha256": "821F6F3A809A0D7E3050B7284714EDF603B474C194E9E8F84D481B6CF872C643",
+      "crc16_over_0x28_to_end": "0x4BDD",
+      "header_0x00_0x28_sha256": "6717F8D3CB743EFB75CE2725E54EC6A42C6622066505213CFC54241EF9AEB717"
+    }
+  },
+  "checks": {
+    "config_expected_primary_size_matches_patched_AP": true,
+    "config_expected_fallback_size_matches_patched_AP1": true,
+    "patched_AP_and_AP1_hash_equal": true,
+    "dll_exact_exists": true,
+    "dll_sector_exists": true,
+    "no_live_action": true
+  },
+  "would_call_sequence": [
+    {
+      "step": "DisposeResource",
+      "note": "Original EXE would extract embedded resources and can overwrite loose staged files."
+    },
+    {
+      "step": "I2CInitial",
+      "arg": 4096
+    },
+    {
+      "step": "I2CAPChangeToIAP",
+      "arg": "0xC2"
+    },
+    {
+      "step": "I2CIAPChangeToErase12ByteMode",
+      "arg_primary": "0x44",
+      "arg_fallback": "0x46"
+    },
+    {
+      "step": "If fallback succeeds",
+      "effect": "Copy AP1 over AP; expected size becomes 58328"
+    },
+    {
+      "step": "FileInfo length check",
+      "path": "offline_patch_candidates/AP",
+      "expected_size": 58328
+    },
+    {
+      "step": "I2CIAPSetAPFlashTable",
+      "arg": 58328,
+      "note": "Native code reopens AP by name/path."
+    },
+    {
+      "step": "I2CIAPSubmitCRCAP",
+      "arg": "active IAP address",
+      "crc_if_patched_AP_loaded": "0x4BDD"
+    },
+    {
+      "step": "I2CIAPFlashAP12ByteMode",
+      "arg": "active IAP address"
+    },
+    {
+      "step": "I2CIAPChangeToAP",
+      "arg": "active IAP address"
+    }
+  ],
+  "verdict": "PASS_OFFLINE"
+}
+

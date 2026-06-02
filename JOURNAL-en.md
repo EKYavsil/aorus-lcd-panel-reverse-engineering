@@ -330,3 +330,36 @@ This matches the observed failure pattern: data around and after approximately `
 The static-image fix strongly supports this model. When the relevant static path was changed from `0x02` to `0x01`, the operation moved from the 64 KB block erase path to the 4 KB sector erase path, and the full image was written correctly.
 
 Therefore, the most likely root cause is not simply GIF file size, GIF encoding, or GCC upload UI behavior. The stronger explanation is an AP-side flash erase/program reliability problem on the `0x02` path, where status polling failures are not enforced and stale panel flash contents can survive a nominally successful upload.
+
+## Breakthrough: Native 64 KB Path Repaired
+
+The final GIF-side breakthrough came from repairing the native 64 KB path itself instead of bypassing it.
+
+The earlier static-image workaround changed the host upload header from `0x02` to `0x01`, which avoided the defective native 64 KB erase helper. That fixed static images, but it was not a clean GIF solution because GIF uploads depend on the `0x02` path for timing/finalization semantics.
+
+The successful AP firmware candidate kept the native GIF semantics:
+
+```text
+F1[0x11] == 0x02
+SPI erase opcode 0xD8
+erase unit 0x10000
+```
+
+and repaired the AP firmware behavior:
+
+```text
+BA44 timeout: 300 -> 1000
+B4D0 forced success: removed
+```
+
+In local testing, this fixed the custom GIF corruption path. The live AP flash sequence completed successfully through the original signed native updater DLL, and the panel accepted the patched AP payload.
+
+This changes the conclusion of the project: the core issue was not a host-side GIF converter failure or merely stale Windows/GCC cache. The root cause was an AP firmware reliability bug in the native 64 KB erase path: the status-poll timeout was too short for the operation, and the 64 KB helper discarded the failure result.
+
+Detailed evidence is now collected under:
+
+```text
+docs/gif-firmware-analysis/
+docs/evidence/gif-native64-timeout1000-success.md
+tools/firmware-harness/n2a-native64-timeout1000/
+```

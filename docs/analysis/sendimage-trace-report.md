@@ -230,10 +230,10 @@ This report intentionally excludes:
 - machine-specific paths
 - admin deploy or restore scripts
 
-The current public static-image workaround is documented separately in the root-level patch builder files:
+The temporary static-image workaround was later superseded by the AP firmware root-cause fix. The current public patcher is documented in:
 
 ```text
-PATCHER.md
-build_final_static_sector_patch.cs
-StaticSectorPatcher.csproj
+FIRMWARE_PATCHER.md
+AorusLcdFirmwarePatcher.csproj
+src/Program.cs
 ```

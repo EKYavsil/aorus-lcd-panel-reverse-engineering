@@ -1,0 +1,60 @@
+﻿{
+  "scope": "offline arithmetic/vector-table/protocol proof only",
+  "ap_file": "official_firmware/F1.4/AP",
+  "ap_size": {
+    "dec": 58328,
+    "hex": "0xE3D8"
+  },
+  "ap_base_evidence": {
+    "config_IAP_CODE_SIZE": "4096 / 0x1000",
+    "native_8203_erase_start": "0x1000",
+    "native_8204_program_start": "0x1000",
+    "vector_table_first_words": [
+      "0x20003B10",
+      "0x00001155",
+      "0x000011C9",
+      "0x00007C61",
+      "0x000011CD",
+      "0x000011CF",
+      "0x000011D1",
+      "0xFFFFFFFF",
+      "0xFFFFFFFF",
+      "0xFFFFFFFF",
+      "0xFFFFFFFF",
+      "0x000011D3",
+      "0x000011D5",
+      "0xFFFFFFFF",
+      "0x000011D7",
+      "0x000011D9"
+    ],
+    "reset_vector": "0x00001155",
+    "note": "Cortex-M vector entries point into the 0x1000+ address range, consistent with AP being linked to run at 0x1000 while bootloader/IAP occupies the lower 0x1000 bytes."
+  },
+  "ranges": {
+    "ap_program_range": {
+      "start": "0x1000",
+      "end": "0xF3D7"
+    },
+    "original_fixed_erase_range": {
+      "start": "0x1000",
+      "end": "0xEFFF"
+    },
+    "not_erased_but_programmed_by_F1_4": {
+      "start": "0xF000",
+      "end": "0xF3D7",
+      "bytes": 984
+    },
+    "sector_containing_ap_end": {
+      "start": "0xF000",
+      "end": "0xFFFF",
+      "sector_size": "0x1000"
+    }
+  },
+  "conclusion": {
+    "erase_end_F3D7_is_exact_but_not_sector_aligned": true,
+    "erase_end_FFFF_is_sector_aligned": true,
+    "why_FFFF_is_not_arbitrary": "The AP image extends into the 0xF000..0xFFFF 4KB sector. If the bootloader erases by 4KB sectors, a correct update must erase that whole sector before programming bytes through 0xF3D7.",
+    "remaining_unknown": "This proves sector alignment for the AP image tail, but does not prove the bootloader has no special hidden metadata in the unused 0xF3D8..0xFFFF tail. However, such metadata would already conflict with any normal sector erase required to update F1.4 bytes in the same sector."
+  }
+}
+

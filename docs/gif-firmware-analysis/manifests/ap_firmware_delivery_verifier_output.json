@@ -1,0 +1,164 @@
+﻿[
+  {
+    "package": "official_firmware/Gv_lcd_fw_update_N50_ICE_F1.2.exe",
+    "package_size": 9156056,
+    "package_sha256": "7B08371C48FB7B5FDFD3ED17677720E0C5EF3561E1FF4D7002B276E70F5D0F41",
+    "config_offset": 140646,
+    "config_offset_hex": "0x22566",
+    "config_info": {
+      "FW_Ver": "1.1",
+      "FW_File": "AP",
+      "FW_File1": "AP1",
+      "FW_FileSize": "56404",
+      "FW_FileSize1": "56404",
+      "IAP_CODE_SIZE": "4096",
+      "IAP_ADDRESS": "68",
+      "IAP_ADDRESS1": "70",
+      "AP_ADDRESS": "194",
+      "AP_DataSize": "256",
+      "I2C_Speed": "100"
+    },
+    "declared_size": 56404,
+    "declared_size1": 56404,
+    "erase_start_hex": "0x1000",
+    "erase_end_hex": "0xEFFF",
+    "erase_len": 57344,
+    "flash_start_hex": "0x1000",
+    "flash_end_hex": "0xEC53",
+    "flash_len": 56404,
+    "overflow_bytes_past_erase": 0,
+    "fits_fixed_erase_window": true,
+    "ap_candidates_before_config": [
+      {
+        "offset": 19932,
+        "offset_hex": "0x4DDC",
+        "before_config": true,
+        "score": 15,
+        "sha256": "8F8F295036A025421CF85BB590FC86620088DECAFB647F3488F7537153F4DAD2",
+        "first16": "08 3B 00 20 55 11 00 00 C9 11 00 00 11 78 00 00",
+        "last16": "13 FF 42 1A 84 F6 12 78 3A BE E4 03 32 30 75 00",
+        "byte_a534": "7A 61"
+      },
+      {
+        "offset": 76341,
+        "offset_hex": "0x12A35",
+        "before_config": true,
+        "score": 15,
+        "sha256": "8F8F295036A025421CF85BB590FC86620088DECAFB647F3488F7537153F4DAD2",
+        "first16": "08 3B 00 20 55 11 00 00 C9 11 00 00 11 78 00 00",
+        "last16": "13 FF 42 1A 84 F6 12 78 3A BE E4 03 32 30 75 00",
+        "byte_a534": "7A 61"
+      }
+    ],
+    "all_vector_candidates_count": 19
+  },
+  {
+    "package": "official_firmware/GV-N5080AORUSM_ICE-16GD_LCD_F1.3.exe",
+    "package_size": 11908056,
+    "package_sha256": "BBFC72B8074F4700E2EA170D2FB27B5E6912AA5604944FB6357C71F8DA4A58E5",
+    "config_offset": 147660,
+    "config_offset_hex": "0x240CC",
+    "config_info": {
+      "FW_Ver": "1.3",
+      "FW_File": "AP",
+      "FW_File1": "AP1",
+      "FW_FileSize": "56720",
+      "FW_FileSize1": "56720",
+      "Model_SSID": "418C",
+      "IAP_CODE_SIZE": "4096",
+      "IAP_ADDRESS": "68",
+      "IAP_ADDRESS1": "70",
+      "AP_ADDRESS": "194",
+      "AP_DataSize": "256",
+      "I2C_Speed": "100"
+    },
+    "declared_size": 56720,
+    "declared_size1": 56720,
+    "erase_start_hex": "0x1000",
+    "erase_end_hex": "0xEFFF",
+    "erase_len": 57344,
+    "flash_start_hex": "0x1000",
+    "flash_end_hex": "0xED8F",
+    "flash_len": 56720,
+    "overflow_bytes_past_erase": 0,
+    "fits_fixed_erase_window": true,
+    "ap_candidates_before_config": [
+      {
+        "offset": 26340,
+        "offset_hex": "0x66E4",
+        "before_config": true,
+        "score": 15,
+        "sha256": "6B9AFD55FE7D190B6BECC794962337A23C9E586D117811ABFFAB5ACFD954D0BF",
+        "first16": "18 3B 00 20 55 11 00 00 C9 11 00 00 49 78 00 00",
+        "last16": "FF 13 FF 42 1A 84 F6 12 78 3A BE E4 03 32 30 75",
+        "byte_a534": "BD E8"
+      },
+      {
+        "offset": 83065,
+        "offset_hex": "0x14479",
+        "before_config": true,
+        "score": 15,
+        "sha256": "6B9AFD55FE7D190B6BECC794962337A23C9E586D117811ABFFAB5ACFD954D0BF",
+        "first16": "18 3B 00 20 55 11 00 00 C9 11 00 00 49 78 00 00",
+        "last16": "FF 13 FF 42 1A 84 F6 12 78 3A BE E4 03 32 30 75",
+        "byte_a534": "BD E8"
+      }
+    ],
+    "all_vector_candidates_count": 29
+  },
+  {
+    "package": "official_firmware/GV-N5080AORUSM_ICE-16GD_LCD_F1.4.exe",
+    "package_size": 11911264,
+    "package_sha256": "3B9E29D7D945AFC52DBA051244EFC48AB69D660E34201B03A13BC08B62600DE3",
+    "config_offset": 150876,
+    "config_offset_hex": "0x24D5C",
+    "config_info": {
+      "FW_Ver": "1.4",
+      "FW_File": "AP",
+      "FW_File1": "AP1",
+      "FW_FileSize": "58328",
+      "FW_FileSize1": "58328",
+      "Model_SSID": "418C",
+      "IAP_CODE_SIZE": "4096",
+      "IAP_ADDRESS": "68",
+      "IAP_ADDRESS1": "70",
+      "AP_ADDRESS": "194",
+      "AP_DataSize": "256",
+      "I2C_Speed": "100"
+    },
+    "declared_size": 58328,
+    "declared_size1": 58328,
+    "erase_start_hex": "0x1000",
+    "erase_end_hex": "0xEFFF",
+    "erase_len": 57344,
+    "flash_start_hex": "0x1000",
+    "flash_end_hex": "0xF3D7",
+    "flash_len": 58328,
+    "overflow_bytes_past_erase": 984,
+    "fits_fixed_erase_window": false,
+    "ap_candidates_before_config": [
+      {
+        "offset": 26340,
+        "offset_hex": "0x66E4",
+        "before_config": true,
+        "score": 15,
+        "sha256": "DFDBB0BFCE3885C0D6438B6D9E07D06AFD62B156DEDF6B72FEA92762F6D6FB9C",
+        "first16": "10 3B 00 20 55 11 00 00 C9 11 00 00 61 7C 00 00",
+        "last16": "FF 13 FF 42 1A 84 F6 12 78 3A BE E4 03 32 30 75",
+        "byte_a534": "01 20"
+      },
+      {
+        "offset": 84673,
+        "offset_hex": "0x14AC1",
+        "before_config": true,
+        "score": 15,
+        "sha256": "DFDBB0BFCE3885C0D6438B6D9E07D06AFD62B156DEDF6B72FEA92762F6D6FB9C",
+        "first16": "10 3B 00 20 55 11 00 00 C9 11 00 00 61 7C 00 00",
+        "last16": "FF 13 FF 42 1A 84 F6 12 78 3A BE E4 03 32 30 75",
+        "byte_a534": "01 20"
+      }
+    ],
+    "all_vector_candidates_count": 29
+  }
+]
+

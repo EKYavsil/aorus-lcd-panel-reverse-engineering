@@ -1,21 +1,25 @@
 # Curated Artifact Map
 
-Date: 2026-05-31
+Date: 2026-06-01
 
-This repository keeps the useful public-facing parts of the investigation while excluding proprietary binaries and bulky generated output.
+This repository keeps the useful public-facing parts of the investigation while excluding proprietary binaries, firmware blobs, raw traces, and machine-specific output.
 
 ## Final Fix Path
 
-- `build_final_static_sector_patch.cs`
-  - Root-level minimal Mono.Cecil patch builder.
-  - Changes only the static image F1 header erase-mode byte from `0x02` to `0x01`.
-  - Guarded by static image type, local destination, F1 packet magic, F1 packet destination bytes, and expected original erase-mode byte.
-- `StaticSectorPatcher.csproj`
-  - Root-level .NET project file for building the patch builder.
-- `PATCHER.md`
-  - Root-level explanation of patch purpose, guard conditions, build command, and current limitations.
-- `docs/evidence/static-sector-erase-success.md`
-  - Records the successful full-screen static image result.
+- `AorusLcdFirmwarePatcher.csproj`
+  - Root-level .NET project for the AP firmware payload patcher.
+- `src/Program.cs`
+  - Source for the guarded AP/AP1 patcher.
+  - Applies the native 64 KB erase repair: `BA44` timeout `300 -> 1000` and `B4D0` return propagation.
+- GitHub Release asset: `AorusLcdFirmwarePatcher-win-x64-self-contained.exe`
+  - Optional runtime-free convenience executable.
+  - It is generated from the public source, does not contain GIGABYTE firmware files, and is not committed because the self-contained build is large.
+- `FIRMWARE_PATCHER.md`
+  - Usage, guard conditions, expected hashes, output format, and build instructions.
+- `SAFETY.md`
+  - Firmware safety boundaries and risk notes.
+- `docs/evidence/gif-native64-timeout1000-success.md`
+  - Records the successful local AP firmware repair result.
 - `JOURNAL-en.md`
   - English narrative summary of the investigation path.
 - `JOURNAL-tr.md`
@@ -23,14 +27,21 @@ This repository keeps the useful public-facing parts of the investigation while 
 
 ## Firmware And AP Analysis
 
+- `docs/gif-firmware-analysis/`
+  - Public-facing reports from the custom GIF and AP firmware investigation.
+  - Includes the final native 64 KB repair evidence.
+- `tools/firmware-analysis/`
+  - Offline scripts used for AP hash/CRC analysis, firmware delivery mapping, erase-window checks, and staging verification.
+- `tools/firmware-harness/n2a-native64-timeout1000/`
+  - Source code for the controlled N2a firmware harness.
+  - No AP/AP1 blobs, vendor DLLs, compiled binaries, or live logs are included.
+- `tools/host-analysis/byte-command-scanner/`
+  - Source for the managed host assembly command-byte scanner.
+  - Used to support host DLL command-byte scan reports without including vendor DLLs.
+- `tools/ghidra-scripts/ap-firmware/`
+  - Java Ghidra scripts used to inspect AP firmware timeout, timer vector, command parser, and patch sites.
 - `tools/ghidra/`
-  - Java Ghidra scripts used to inspect firmware/updater code, function references, AP firmware constants, SPI/page-program logic, and erase-mode behavior.
-- `docs/analysis/f1-header-to-erase-mode.md`
-  - Maps the F1 metadata byte to AP firmware erase behavior.
-- `docs/analysis/ap-flash-failure-propagation.md`
-  - Explains why host-side success could be misleading even when panel storage was stale.
-- `docs/analysis/f2-finalize-success-criteria.md`
-  - Documents finalize behavior and why it was not sufficient evidence of a valid full write.
+  - Earlier Ghidra scripts for firmware/updater code, function references, AP firmware constants, SPI/page-program logic, and erase-mode behavior.
 
 ## SendImage And Payload Elimination
 
@@ -40,28 +51,38 @@ This repository keeps the useful public-facing parts of the investigation while 
 - `docs/analysis/sendimage-trace-report.md`
   - Summarizes SendImage metadata, destination, chunk count, and success path.
 
+## Superseded Host Workaround
+
+- `docs/evidence/static-sector-erase-success.md`
+  - Historical evidence for the temporary static-image host workaround.
+  - Retained because it helped isolate the broken native 64 KB AP erase path.
+- `experiments/static-sector-erase-test/`
+  - Historical static-only host patch design.
+  - Superseded by the AP firmware fix and not presented as the final product.
+- `docs/analysis/f1-header-to-erase-mode.md`
+  - Maps the F1 metadata byte to AP firmware erase behavior.
+
 ## Failed Or Rejected Paths
 
 - `docs/research-log/FAILED_APPROACHES_AND_ELIMINATED_HYPOTHESES.md`
   - Human-readable summary of what was ruled out.
 - `docs/research-log/legacy-research-summary.md`
   - Concise summary of earlier research phases and hypotheses later rejected.
-
-## GIF Work
-
-- `tools/python/gif_experiments/`
-  - Python scripts from the custom GIF side of the investigation.
-  - GIF remains unresolved and is intentionally separated from the fixed static-image path.
-- `docs/analysis/gif-erase-mode-hypothesis.md`
-  - Current offline hypothesis for whether GIF may share the same erase-mode bug as static image uploads.
+- `docs/research-log/EXTERNAL_PROTOCOL_REFERENCES.md`
+  - Public repository references that informed the protocol investigation without vendoring third-party code.
+- `docs/research-log/OFFLINE_ARTIFACT_REVIEW_20260602.md`
+  - Documents which local offline artifacts were imported and which were intentionally excluded.
+- `experiments/`
+  - Historical traces, diagnostic notes, and rejected hypotheses.
 
 ## Local-Only Artifacts
 
 The following are deliberately excluded from GitHub:
 
 - GIGABYTE DLL/EXE files.
-- Patched DLL outputs.
 - Firmware blobs, extracted packages, and updater binaries.
+- Patched AP/AP1 payloads.
+- Patched vendor DLL outputs.
 - Raw logs and traces.
 - Binary pData dumps and rendered test images.
 - Ghidra project databases.

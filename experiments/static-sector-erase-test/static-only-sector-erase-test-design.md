@@ -6,7 +6,7 @@ Scope: historical diagnostic design. No live deploy, no DLL swap, no panel comma
 
 ## Purpose
 
-This document records the diagnostic design that led to the final root-level patch builder.
+This document records the diagnostic design that led to the temporary static-image host workaround. That workaround was later superseded by the AP firmware fix documented in the root firmware patcher.
 
 The tested hypothesis was:
 
@@ -16,12 +16,12 @@ The second 64 KB block around 0x01310000 fails or is not programmed correctly.
 Changing static-only upload to 4 KB sector erase may avoid the broken 64 KB block erase path.
 ```
 
-The later public implementation of this design is:
+The later AP firmware fix made this host-side workaround unnecessary as the final product. The current public implementation is:
 
 ```text
-build_final_static_sector_patch.cs
-StaticSectorPatcher.csproj
-PATCHER.md
+AorusLcdFirmwarePatcher.csproj
+src/Program.cs
+FIRMWARE_PATCHER.md
 ```
 
 ## Static F1 Header
@@ -160,7 +160,7 @@ Interpretation:
 4 KB sector erase path can refresh the lower region.
 ```
 
-This was the observed result and became the basis for the public root-level patch builder.
+This was the observed result and helped isolate the broken native 64 KB AP erase path.
 
 ### Outcome B: Same Upper-Only / Lower-Black Result
 
@@ -204,4 +204,4 @@ This test still used the official GCC/ucVga `SendImage` path:
 
 Only the erase granularity selector in an already-valid static F1 metadata packet changed from 64 KB block mode to 4 KB sector mode.
 
-The risk was still real because it changed how AP erased the static media slot, so the final public builder keeps the change static-only and guarded.
+The risk was still real because it changed how AP erased the static media slot. This is why the workaround remained diagnostic and was later replaced by the AP firmware root-cause fix.

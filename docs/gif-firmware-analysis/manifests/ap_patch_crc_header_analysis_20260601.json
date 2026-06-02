@@ -1,0 +1,34 @@
+﻿{
+  "scope": "offline AP header/diff/native-CRC analysis only",
+  "original": {
+    "path": "official_firmware/F1.4/AP",
+    "size": 58328,
+    "sha256": "DFDBB0BFCE3885C0D6438B6D9E07D06AFD62B156DEDF6B72FEA92762F6D6FB9C",
+    "header_0x00_0x7f": "10 3B 00 20 55 11 00 00 C9 11 00 00 61 7C 00 00 CD 11 00 00 CF 11 00 00 D1 11 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF D3 11 00 00 D5 11 00 00 FF FF FF FF D7 11 00 00 D9 11 00 00 DB 11 00 00 DB 11 00 00 DB 11 00 00 FF FF FF FF DB 11 00 00 DB 11 00 00 DB 11 00 00 DB 11 00 00 DB 11 00 00 DB 11 00 00 DB 11 00 00 DB 11 00 00 DB 11 00 00 DB 11 00 00 DB 11 00 00 DB 11 00 00",
+    "crc16_over_0x28_to_end": "0x4560"
+  },
+  "patched": {
+    "path": "offline_patch_candidates/AP_option3_16x4k.bin",
+    "size": 58328,
+    "sha256": "821F6F3A809A0D7E3050B7284714EDF603B474C194E9E8F84D481B6CF872C643",
+    "header_0x00_0x7f": "10 3B 00 20 55 11 00 00 C9 11 00 00 61 7C 00 00 CD 11 00 00 CF 11 00 00 D1 11 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF D3 11 00 00 D5 11 00 00 FF FF FF FF D7 11 00 00 D9 11 00 00 DB 11 00 00 DB 11 00 00 DB 11 00 00 FF FF FF FF DB 11 00 00 DB 11 00 00 DB 11 00 00 DB 11 00 00 DB 11 00 00 DB 11 00 00 DB 11 00 00 DB 11 00 00 DB 11 00 00 DB 11 00 00 DB 11 00 00 DB 11 00 00",
+    "crc16_over_0x28_to_end": "0x4BDD"
+  },
+  "header_equal_first_0x28": true,
+  "header_equal_first_0x80": true,
+  "diff_ranges": [
+    {
+      "start": 42192,
+      "end_inclusive": 42221,
+      "length": 30
+    }
+  ],
+  "patch_window_original": "2D E9 F0 41 04 46 B0 F1 80 6F 02 D3 00 20 BD E8 F0 81 00 F0 E7 FA 00 28 F9 D0 16 4E 16 4D 4F F4 00 77 30 78 02 28 1F D0 39 46 A8 68 F8 F7 2C F9",
+  "patch_window_patched": "30 B5 04 46 10 25 20 46 00 F0 1A FA 28 B1 04 F5 80 54 01 3D F7 D1 01 20 30 BD 00 20 30 BD 4F F4 00 77 30 78 02 28 1F D0 39 46 A8 68 F8 F7 2C F9",
+  "native_crc_observation": {
+    "submit_crc_export": "I2CIAPSubmitCRCAP wraps RVA 0x3E90",
+    "observed_behavior": "RVA 0x3E90 reads AP buffer pointer/size populated by SetAPFlashTable, skips first 0x28 bytes, computes bit-serial CRC16 poly 0x1021, and sends command 0x8104.",
+    "implication": "A patched AP payload should receive a freshly computed CRC at update time if delivered through the same native DLL code path; no static header CRC update was identified in the first 0x28 bytes."
+  }
+}
+

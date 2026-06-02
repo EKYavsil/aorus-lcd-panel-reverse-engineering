@@ -1,5 +1,4 @@
 # AORUS LCD Panel Tersine Mühendislik Günlüğü
-
 Bu günlük, GIGABYTE AORUS RTX 5080 ICE LCD panelde görülen statik özel görsel bozulmasıyla ilgili araştırma sürecini özetler.
 
 ## Problem
@@ -330,3 +329,36 @@ Bu model gözlemlenen failure pattern ile eşleşir: yaklaşık `0x01310000` civ
 Statik görsel fix'i bu modeli güçlü biçimde destekler. İlgili statik path `0x02` değerinden `0x01` değerine değiştirildiğinde operasyon 64 KB block erase path'inden 4 KB sector erase path'ine geçti ve tam görsel doğru şekilde yazıldı.
 
 Bu nedenle en olası kök neden yalnızca GIF dosya boyutu, GIF encoding veya GCC upload UI davranışı değildir. Daha güçlü açıklama, `0x02` path'i üzerinde AP-side flash erase/program güvenilirlik problemidir: status polling failure durumları enforce edilmemekte ve panel flash içindeki eski içerik nominal olarak başarılı görünen bir upload sonrasında bile kalabilmektedir.
+
+## Kirilim: Native 64 KB Path Onarildi
+
+GIF tarafindaki asil kirilim, 64 KB path'inden kacmak yerine native 64 KB path'ini onarinca geldi.
+
+Statik gorsel workaround'i host upload header'inda `0x02 -> 0x01` yaparak bozuk native 64 KB erase helper'ini atliyordu. Bu statik gorseli duzeltti, fakat GIF icin temiz cozum degildi; cunku GIF upload'lari `0x02` path'inin timing/finalization semantigine ihtiyac duyuyor.
+
+Basarili AP firmware adayi GIF semantigini korudu:
+
+```text
+F1[0x11] == 0x02
+SPI erase opcode 0xD8
+erase unit 0x10000
+```
+
+ve AP firmware davranisini onardi:
+
+```text
+BA44 timeout: 300 -> 1000
+B4D0 forced success: kaldirildi
+```
+
+Lokal testte bu degisiklik custom GIF bozulmasini duzeltti. Live AP flash sekansi orijinal imzali native updater DLL uzerinden basariyla tamamlandi ve panel patched AP payload'unu kabul etti.
+
+Bu, projenin sonucunu netlestirdi: sorun host-side GIF converter veya yalnizca Windows/GCC cache problemi degildi. Kok neden AP firmware icindeki native 64 KB erase path'inde bir guvenilirlik bug'iydi: status-poll timeout operasyon icin fazla kisaydi ve 64 KB helper failure sonucunu yutuyordu.
+
+Ayrintili kanitlar:
+
+```text
+docs/gif-firmware-analysis/
+docs/evidence/gif-native64-timeout1000-success.md
+tools/firmware-harness/n2a-native64-timeout1000/
+```

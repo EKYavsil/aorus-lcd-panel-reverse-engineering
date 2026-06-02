@@ -1,173 +1,144 @@
 # AORUS LCD Panel Reverse Engineering
 
-Reverse engineering, firmware analysis, and a minimal reproducible patch builder for a GIGABYTE AORUS RTX 5080 ICE LCD panel static custom image corruption issue.
+Independent reverse engineering notes and a reproducible firmware patcher for the GIGABYTE AORUS RTX 5080 ICE LCD panel custom image/GIF corruption bug.
 
 ## Practical Summary
 
-This repository includes a patch builder that can generate a working patched `ucVga.dll` from a clean local GIGABYTE Control Center DLL. In local testing, the generated DLL fixed the static custom-image corruption symptom where the lower portion of the LCD image stayed black or stale.
+The panel-side AP firmware has a broken native 64 KB erase path. The failure presents as custom static images with a black/stale lower region and custom GIFs that upload but display incorrectly, freeze, or fall back into invalid panel state.
 
-For convenience, a prebuilt `BuildFinalStaticSectorPatch.exe` is included in the repository root. Users who trust the provided binary can use it directly. Users who prefer full reproducibility can build the same tool from the public source code with the .NET 8 SDK.
+This repository contains a source-available repair tool that generates repaired `AP` and `AP1` firmware payloads from a locally obtained official GIGABYTE LCD firmware package.
 
-The practical workaround is working and documented, but the deeper panel-side reason for the failure is still under investigation. The current evidence points to a problematic AP firmware erase/write path selected by one metadata byte in the static image upload header. The custom GIF corruption path is also still under investigation and is intentionally not patched by the current builder.
+The currently supported/tested input is the official GIGABYTE LCD firmware `1.4` package for the tested AORUS RTX 5080 ICE LCD panel. The tool intentionally validates the exact `AP`/`AP1` and updater DLL hashes before flashing; other firmware versions or card variants should be treated as unsupported until separately analyzed.
 
-No proprietary vendor DLLs, patched vendor DLLs, firmware images, extracted update packages, raw traces, or machine-specific dumps are included in this repository.
+The tool does **not** include GIGABYTE firmware, DLLs, installers, extracted packages, raw traces, or proprietary binaries. It asks the user to select a locally extracted official GIGABYTE LCD firmware folder, validates it strictly, stages patched `AP`/`AP1`, and starts flashing only after the user presses `Start / Baslat`.
 
-## Executive Summary
+For non-technical users, the prebuilt Windows x64 repair executable is intended to be distributed as a GitHub Release asset. It is self-contained and does not require the Microsoft .NET Desktop Runtime. The executable is not committed to this repository because the runtime-free build is large. Users who want full reproducibility can build the same executable from `src/Program.cs` with the .NET 8 SDK.
 
-The LCD panel accepted custom static image uploads, and host-side APIs reported success, but the panel often refreshed only the upper portion of the image. The lower region stayed black or stale, eventually producing a repeatable "lower 40 percent black" failure.
+## Root Cause
 
-The working local fix changes one metadata byte in the static image `F1` upload header:
+The final local fix repairs the AP firmware's own 64 KB erase behavior instead of bypassing it from the Windows upload path.
 
-```text
-F1[0x11]: 0x02 -> 0x01
-```
-
-This changes the AP firmware erase/write path used for static image uploads at the custom static slot:
+Two AP firmware sites were identified:
 
 ```text
-0x01300000
+FUN_0000BA44: SPI status poll helper
+FUN_0000B4D0: native 64 KB erase helper
 ```
 
-The fix does not modify image payloads, destination addresses, GIF handling, display modes, firmware images, or raw I2C commands.
-
-## Technical Finding
-
-Original static image upload header:
+The bug has two parts:
 
 ```text
-F1 CB 55 AC 38 01 30 00 00 01 00 00 01 AA 00 00 00 02 00
+BA44 polls erase completion with timeout 300, which is too short for the observed 64 KB erase path.
+B4D0 calls BA44 after issuing 0xD8 64 KB erase, then overwrites the result with success.
 ```
 
-Working static image upload header:
+The repaired payload changes:
 
 ```text
-F1 CB 55 AC 38 01 30 00 00 01 00 00 01 AA 00 00 00 01 00
+AP file offset 0xAA4A: 4F F4 96 70 -> 40 F2 E8 30   ; BA44 timeout 300 -> 1000
+AP file offset 0xA534: 01 20       -> 00 BF         ; B4D0 propagates BA44 result
 ```
 
-The failure boundary aligned with the second 64 KB flash erase block around:
+In local testing, this repaired the native 64 KB erase path and allowed full-screen static images and custom GIFs to write correctly.
+
+## Repair Tool Usage
+
+Start with [FIRMWARE_PATCHER.md](FIRMWARE_PATCHER.md).
+
+The patcher expects a local extracted official GIGABYTE LCD firmware `1.4` folder containing:
 
 ```text
-0x01310000
+AP
+AP1
+GvLcdFwUpdate.dll
 ```
 
-Analysis indicates that `0x02` selects a problematic block-erase path for this static image workflow, while `0x01` selects the 4 KB sector-erase path. With sector erase, the full 320x170 RGB565 static frame refreshed correctly.
+Download `AorusLcdFirmwarePatcher-win-x64-self-contained.exe` from GitHub Releases and run it directly. The graphical repair screen shows a firmware flashing warning, asks for the extracted official firmware folder, and provides `Start / Baslat` and `Cancel / Iptal` buttons.
+
+The tool does not validate or flash until the user selects a folder and presses `Start / Baslat`.
+
+If the selected folder is not the exact tested official firmware package, the tool stops before flashing.
+
+During repair, it creates a local stage folder under:
+
+```text
+%LOCALAPPDATA%\AorusLcdFirmwareRepair\stage
+```
+
+The stage folder contains patched `AP`/`AP1`, required official updater DLL/runtime files, `patch-manifest.json`, `patch-report.md`, and `repair-flash.log`.
+
+## Build From Source
+
+Install the .NET 8 SDK, then build:
+
+```powershell
+dotnet build .\AorusLcdFirmwarePatcher.csproj -c Release
+```
+
+Create the standalone Windows executable used for GitHub Releases:
+
+```powershell
+dotnet publish .\AorusLcdFirmwarePatcher.csproj -c Release -r win-x64 -p:PublishSingleFile=true --self-contained true -o .\publish\firmware-patcher-self-contained
+```
+
+## Safety Boundary
+
+Read [SAFETY.md](SAFETY.md) before using the patched firmware payloads.
+
+Firmware flashing can leave the LCD controller unusable if the wrong package, wrong model, interrupted update, or bad payload is used. The repair command therefore refuses to flash unless the exact tested AP/AP1 hash, updater DLL hash, patched AP/AP1 hash, CRC, patch bytes, administrator context, and confirmation token are all present.
 
 ## Investigation Highlights
 
-- Proved the GPU and LCD panel were reachable through the existing GIGABYTE/NVAPI I2C path.
-- Verified that custom static image payload data was generated correctly before being sent to the panel.
-- Ruled out Windows-side cache, GCC profile state, display mode, overlay, loop mode, and firmware reinstall as primary causes.
-- Reconstructed relevant LCD protocol commands including `F1`, `F2`, `E1`, `E5`, `E7`, `F3`, and `AA`.
-- Performed offline AP firmware analysis to connect the `F1` header byte with flash erase behavior.
-- Built a static-only patch guarded by image type, local destination, packet destination, packet magic, and expected original byte value.
-- Preserved the unresolved GIF issue as a separate path instead of applying an unsafe broad patch.
-
-## Fix Scope
-
-The final patch is intentionally narrow:
-
-```text
-if nType == 1
-and SendImage local destination == 0x01300000
-and F1 packet magic == F1 CB 55 AC 38
-and F1 packet destination bytes == 01 30 00 00
-and F1[0x11] == 0x02:
-    F1[0x11] = 0x01
-```
-
-No proprietary vendor DLLs or patched vendor DLLs are included in this repository. The patch builder source is provided so the modification can be reproduced from a locally obtained clean `ucVga.dll`.
+- Verified the GPU and LCD controller were reachable through the existing GIGABYTE/NVAPI I2C path.
+- Proved static `pData` rendered correctly offline, eliminating the image converter as the root cause.
+- Reconstructed relevant LCD commands including `F1`, `F2`, `E1`, `E5`, `E7`, `F3`, and `AA`.
+- Confirmed the Windows upload path reported success even when panel flash state was stale or partially erased.
+- Built and tested a temporary static-image host workaround, then superseded it with the AP firmware root-cause fix.
+- Mapped the AP firmware native 64 KB erase helper and proved the short timeout/failure masking defect.
+- Verified the native AP repair in local testing.
 
 ## Repository Layout
 
 ```text
-BuildFinalStaticSectorPatch.exe      Optional prebuilt patcher executable for convenience
-build_final_static_sector_patch.cs   Root-level Mono.Cecil patch builder source
-StaticSectorPatcher.csproj           Root-level .NET project for building from source
-PATCHER.md                           Patch builder usage and guard documentation
-docs/analysis/                       Technical reverse-engineering notes and protocol analysis
-docs/evidence/                       Test evidence and final success notes
+AorusLcdFirmwarePatcher.csproj       Root .NET project for the firmware repair tool
+src/Program.cs                       Patcher source code
+GitHub Release asset                 Optional runtime-free prebuilt executable, not committed
+FIRMWARE_PATCHER.md                  Patcher usage, validation, and output format
+SAFETY.md                            Firmware safety notes and boundaries
+docs/evidence/                       Final success notes and test evidence
+docs/gif-firmware-analysis/          AP/GIF firmware investigation reports
+docs/analysis/                       Earlier protocol and SendImage analysis
 docs/research-log/                   Curated research history and artifact map
-experiments/                         Historical traces and diagnostic notes
-tools/firmware_*                     Offline firmware updater and IAP analysis helpers
-tools/ghidra/                        Ghidra scripts for AP firmware and native binary analysis
-tools/python/                        GIF-side experiment helpers; GIF bug remains unresolved
+experiments/                         Historical traces and rejected hypotheses
+tools/firmware-analysis/             Offline AP firmware analysis helpers
+tools/firmware-harness/              Controlled firmware harness source
+tools/host-analysis/                 Host-side managed assembly scanners
+tools/ghidra-scripts/                Ghidra scripts for AP firmware analysis
 ```
 
-Start here:
+Useful starting points:
 
-- [Patch builder usage](PATCHER.md)
-- [Patch builder source](build_final_static_sector_patch.cs)
-- [F1 header to erase mode](docs/analysis/f1-header-to-erase-mode.md)
-- [Static sector erase success notes](docs/evidence/static-sector-erase-success.md)
-- [GIF erase-mode hypothesis](docs/analysis/gif-erase-mode-hypothesis.md)
+- [Firmware patcher guide](FIRMWARE_PATCHER.md)
+- [Safety notes](SAFETY.md)
+- [Native 64 KB timeout success evidence](docs/evidence/gif-native64-timeout1000-success.md)
+- [GIF firmware analysis summary](docs/gif-firmware-analysis/GIF_Issue_Public_Research_Summary.md)
+- [External protocol references](docs/research-log/EXTERNAL_PROTOCOL_REFERENCES.md)
+- [Offline artifact review](docs/research-log/OFFLINE_ARTIFACT_REVIEW_20260602.md)
 - [English investigation journal](JOURNAL-en.md)
 - [Turkish investigation journal](JOURNAL-tr.md)
-
-## Easiest Usage: Prebuilt Root Executable
-
-The easiest path is to use the prebuilt executable in the repository root:
-
-```text
-BuildFinalStaticSectorPatch.exe
-```
-
-The original GIGABYTE DLL is usually located here:
-
-```text
-C:\Program Files\GIGABYTE\Control Center\Lib\GBT_VGA\ucVga.dll
-```
-
-Quick use:
-
-1. Download or clone this repository.
-2. Copy a clean local `ucVga.dll` from your own GIGABYTE Control Center installation into the same folder as `BuildFinalStaticSectorPatch.exe`.
-   - Typical source path: `C:\Program Files\GIGABYTE\Control Center\Lib\GBT_VGA\ucVga.dll`
-3. Run `BuildFinalStaticSectorPatch.exe`.
-4. The tool creates `ucVga.static-sector.dll` in the same folder.
-5. Back up your original vendor `ucVga.dll` before using the generated DLL as a replacement.
-
-The included executable is provided for convenience. It does **not** contain `ucVga.dll`, patched vendor DLLs, firmware images, GIGABYTE installers, raw traces, or proprietary vendor binaries.
-
-This repository does not automate installation or replacement of live GIGABYTE files.
-
-## Build From Source
-
-If you do not trust the prebuilt binary, build the patcher yourself from the public source code with the .NET 8 SDK:
-
-```powershell
-dotnet build .\StaticSectorPatcher.csproj -c Release
-```
-
-Generate a patched DLL from a clean local vendor DLL:
-
-```powershell
-.\bin\Release\net8.0\BuildFinalStaticSectorPatch.exe .\ucVga.clean.dll .\ucVga.static-sector.dll "C:\Program Files\GIGABYTE\Control Center\Lib\GBT_VGA"
-```
-
-The patch builder only writes a new output DLL. Installation or replacement of a live vendor DLL is intentionally not automated in this public repository.
 
 ## Current Status
 
 ```text
-Static custom image corruption: fixed locally and documented
-Underlying AP/panel-side failure mechanism: still under investigation
-Custom GIF corruption: unresolved, intentionally not patched here
+Static custom image corruption: fixed locally by AP firmware patch
+Custom GIF corruption: fixed locally by AP firmware patch
+Final product in this repo: safe payload patcher plus explicitly confirmed repair flashing mode
 ```
 
-## Use Of AI Assistance
+## AI Assistance
 
-Parts of this investigation, documentation cleanup, code review, and reverse-engineering analysis workflow were assisted by OpenAI Codex/ChatGPT. The technical claims in this repository are based on the included local traces, offline firmware analysis notes, patch-builder source, and user-observed test results rather than on AI output alone.
-
-## Engineering Notes
-
-This project is intentionally conservative:
-
-- It does not redistribute proprietary GIGABYTE binaries.
-- It does not include firmware blobs, extracted update packages, raw traces, or machine-specific scan output.
-- It avoids broad protocol changes and raw I2C command injection.
-- It keeps the working static-image fix separate from the unresolved GIF path.
-- It licenses only the original source code and documentation in this repository, not vendor software or firmware.
+Parts of this investigation, documentation cleanup, code review, and reverse-engineering workflow were assisted by OpenAI Codex/ChatGPT. The technical claims in this repository are based on included traces, offline firmware analysis notes, source code, and user-observed test results rather than AI output alone.
 
 ## Disclaimer
 
-This is an independent reverse-engineering investigation and local workaround. It is not affiliated with, endorsed by, or supported by GIGABYTE. Use at your own risk and do not redistribute proprietary vendor binaries.
+This is an independent reverse-engineering investigation. It is not affiliated with, endorsed by, or supported by GIGABYTE. Use at your own risk. Do not redistribute proprietary vendor binaries or firmware files.
