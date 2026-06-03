@@ -9,6 +9,16 @@ Independent reverse-engineering notes and an MIT-licensed firmware repair tool f
 >
 > Prefer an official GIGABYTE firmware/software fix when one is available.
 
+## Background
+
+Before starting the reverse-engineering work, I performed a broad AI-assisted review of public reports, forum discussions, community troubleshooting attempts, and available documentation related to AORUS LCD panel corruption issues.
+
+What I found was that similar symptoms appeared to have been reported by users for a long time: custom image uploads failing partially, GIF uploads behaving inconsistently, LCD content becoming stale or corrupted, and official software/firmware reinstall attempts not producing a reliable long-term fix.
+
+I could not find a documented official or community solution that identified and repaired the underlying firmware-side cause. Most suggested workarounds appeared to be temporary recovery steps, such as reinstalling software, reflashing firmware, changing Windows language or region settings, clearing state, or retrying uploads. I still tried these suggested fixes during the troubleshooting process, but none of them resolved the issue reliably.
+
+My assessment is that these workarounds likely disturb or refresh enough panel/software state to get lucky temporarily, but they do not repair the underlying AP firmware erase defect. The stable fix identified in this repository targets the firmware-side root cause directly.
+
 ## Practical Summary
 
 The observed issue affected custom LCD media uploaded through GIGABYTE Control Center:
@@ -19,8 +29,6 @@ The observed issue affected custom LCD media uploaded through GIGABYTE Control C
 - Built-in/default LCD modes could still display correctly.
 
 The investigation indicates that the panel-side AP firmware has a defective native 64 KB flash erase path. The local repair patches the AP firmware payload so the native 64 KB erase path waits longer and no longer hides status-poll failure from the caller.
-
-Community workarounds such as reinstalling LCD firmware, reinstalling GIGABYTE software, changing Windows language/region settings, clearing caches, or forcing the panel back into a default mode may appear to fix the issue on some systems. My assessment is that these workarounds likely disturb or refresh enough panel/software state to get lucky temporarily, but they do not repair the underlying AP firmware erase defect. If custom static images or custom GIFs continue to be uploaded, the same corruption pattern can return. The stable fix identified in this repository targets the firmware-side root cause directly.
 
 This repository contains:
 
