@@ -11,19 +11,20 @@ internal static class Program
 {
     private const int ExpectedApSize = 58_328;
     private const int TimeoutPatchOffset = 0xAA4A;
-    private const int ReturnPatchOffset = 0xA534;
+    private const int EraseReturnPatchOffset = 0xA534;
+    private const int PageProgramReturnPatchOffset = 0xA74E;
     private const int IapCodeSize = 4096;
     private const int ApAddress = 0xC2;
     private const int IapAddressPrimary = 0x44;
     private const int IapAddressFallback = 0x46;
     private const string OriginalApSha256 = "DFDBB0BFCE3885C0D6438B6D9E07D06AFD62B156DEDF6B72FEA92762F6D6FB9C";
-    private const string PatchedApSha256 = "FFD3ACBA17D8C338CDE7FBFAFF71DE979C7E6847CD7E577A93183BF8AE3EC737";
+    private const string PatchedApSha256 = "046CB6D001EA6787C789E78E8103450478EAE4FAA21F00A0E4219454F7DDD333";
     private const string OriginalGvLcdFwUpdateSha256 = "DE23086EDFD6EEBEDB5E97562CEF25AE41D44531F215FF23CA434DFDD63ECB70";
 
     private static readonly byte[] TimeoutOld = Convert.FromHexString("4FF49670");
     private static readonly byte[] TimeoutNew = Convert.FromHexString("40F2E830");
-    private static readonly byte[] ReturnOld = Convert.FromHexString("0120");
-    private static readonly byte[] ReturnNew = Convert.FromHexString("00BF");
+    private static readonly byte[] ForcedSuccessOld = Convert.FromHexString("0120");
+    private static readonly byte[] PreserveResultNew = Convert.FromHexString("00BF");
 
     [STAThread]
     private static int Main()
@@ -195,7 +196,8 @@ internal static class Program
         }
 
         AssertBytes(payload, TimeoutPatchOffset, TimeoutOld, $"{name} BA44 timeout original bytes");
-        AssertBytes(payload, ReturnPatchOffset, ReturnOld, $"{name} B4D0 forced-success original bytes");
+        AssertBytes(payload, EraseReturnPatchOffset, ForcedSuccessOld, $"{name} B4D0 forced-success original bytes");
+        AssertBytes(payload, PageProgramReturnPatchOffset, ForcedSuccessOld, $"{name} B6CC forced-success original bytes");
 
         string sha = Sha256(payload);
         if (strictSha && !string.Equals(sha, OriginalApSha256, StringComparison.OrdinalIgnoreCase))
@@ -213,7 +215,8 @@ internal static class Program
         }
 
         AssertBytes(payload, TimeoutPatchOffset, TimeoutNew, $"{name} BA44 timeout1000 patched bytes");
-        AssertBytes(payload, ReturnPatchOffset, ReturnNew, $"{name} B4D0 propagation patched bytes");
+        AssertBytes(payload, EraseReturnPatchOffset, PreserveResultNew, $"{name} B4D0 propagation patched bytes");
+        AssertBytes(payload, PageProgramReturnPatchOffset, PreserveResultNew, $"{name} B6CC propagation patched bytes");
 
         string sha = Sha256(payload);
         if (!string.Equals(sha, PatchedApSha256, StringComparison.OrdinalIgnoreCase))
@@ -222,9 +225,9 @@ internal static class Program
         }
 
         ushort crc = Crc16(payload.AsSpan(0x28));
-        if (crc != 0xFFFE)
+        if (crc != 0xCB8A)
         {
-            throw new InvalidOperationException($"{name} patched CRC16 mismatch. Expected 0xFFFE, got 0x{crc:X4}.");
+            throw new InvalidOperationException($"{name} patched CRC16 mismatch. Expected 0xCB8A, got 0x{crc:X4}.");
         }
     }
 
@@ -243,10 +246,11 @@ internal static class Program
     {
         byte[] patched = payload.ToArray();
         ReplaceBytes(patched, TimeoutPatchOffset, TimeoutOld, TimeoutNew, $"{name} BA44 timeout patch");
-        ReplaceBytes(patched, ReturnPatchOffset, ReturnOld, ReturnNew, $"{name} B4D0 return propagation patch");
+        ReplaceBytes(patched, EraseReturnPatchOffset, ForcedSuccessOld, PreserveResultNew, $"{name} B4D0 return propagation patch");
+        ReplaceBytes(patched, PageProgramReturnPatchOffset, ForcedSuccessOld, PreserveResultNew, $"{name} B6CC return propagation patch");
 
         List<(int Offset, byte Old, byte New)> diffs = Diff(payload, patched);
-        int expectedDiffBytes = TimeoutOld.Length + ReturnOld.Length;
+        int expectedDiffBytes = TimeoutOld.Length + ForcedSuccessOld.Length + ForcedSuccessOld.Length;
         if (diffs.Count != expectedDiffBytes)
         {
             throw new InvalidOperationException($"{name} unexpected diff count. Expected {expectedDiffBytes}, got {diffs.Count}.");
@@ -262,8 +266,8 @@ internal static class Program
             CreatedAtUtc = DateTimeOffset.UtcNow.ToString("O"),
             InputDirectory = "<local-input-directory>",
             OutputDirectory = "<local-output-directory>",
-            PatchName = "N2A native64 timeout1000",
-            RootCause = "AP firmware native 64 KB erase path used a too-short BA44 status-poll timeout and B4D0 discarded BA44 failure.",
+            PatchName = "N2B native64 timeout1000 + flash result propagation",
+            RootCause = "AP firmware used a too-short BA44 status-poll timeout, while both the B4D0 64 KB erase helper and B6CC page-program helper discarded BA44 failure.",
             Safety = "Generated AP/AP1 from local official firmware files. Flashing starts only from the GUI after the user presses Start.",
             Inputs = new Dictionary<string, FileRecord>
             {
@@ -279,7 +283,8 @@ internal static class Program
             Patches =
             [
                 new PatchRecord("BA44 timeout 300 -> 1000", "0x0000BA4A", "0xAA4A", Hex(TimeoutOld), Hex(TimeoutNew)),
-                new PatchRecord("B4D0 propagate BA44 poll result", "0x0000B534", "0xA534", Hex(ReturnOld), Hex(ReturnNew))
+                new PatchRecord("B4D0 propagate BA44 poll result", "0x0000B534", "0xA534", Hex(ForcedSuccessOld), Hex(PreserveResultNew)),
+                new PatchRecord("B6CC propagate BA44 page-program result", "0x0000B74E", "0xA74E", Hex(ForcedSuccessOld), Hex(PreserveResultNew))
             ],
             Checks = new Dictionary<string, bool>
             {
@@ -287,7 +292,8 @@ internal static class Program
                 ["AP1_size_expected"] = patchedAp1.Length == ExpectedApSize,
                 ["AP_AP1_identical"] = patchedAp.SequenceEqual(patchedAp1),
                 ["BA44_patch_present"] = HasBytes(patchedAp, TimeoutPatchOffset, TimeoutNew),
-                ["B4D0_patch_present"] = HasBytes(patchedAp, ReturnPatchOffset, ReturnNew),
+                ["B4D0_patch_present"] = HasBytes(patchedAp, EraseReturnPatchOffset, PreserveResultNew),
+                ["B6CC_patch_present"] = HasBytes(patchedAp, PageProgramReturnPatchOffset, PreserveResultNew),
                 ["GvLcdFwUpdate_not_modified_by_tool"] = true
             }
         };
@@ -307,6 +313,7 @@ internal static class Program
         sb.AppendLine("```text");
         sb.AppendLine("BA44 timeout: 300 -> 1000");
         sb.AppendLine("B4D0 forced success: removed / BA44 result propagated");
+        sb.AppendLine("B6CC forced success: removed / page-program result propagated");
         sb.AppendLine("```");
         sb.AppendLine();
         sb.AppendLine("## Inputs");

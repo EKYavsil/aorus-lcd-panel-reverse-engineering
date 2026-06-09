@@ -2,6 +2,8 @@
 
 This document explains how to use the AORUS LCD firmware repair tool.
 
+Current patcher version: `1.1.0`
+
 > [!WARNING]
 > Firmware flashing is risky. A wrong firmware package, wrong GPU model, interrupted flash, or unexpected updater behavior can make the LCD controller unusable.
 >
@@ -14,6 +16,7 @@ The repair patches the AP firmware's native 64 KB erase path:
 ```text
 BA44 timeout: 300 -> 1000
 B4D0 forced success: removed / BA44 result propagated
+B6CC forced success: removed / page-program result propagated
 ```
 
 The byte-level changes are:
@@ -21,6 +24,7 @@ The byte-level changes are:
 ```text
 AP file offset 0xAA4A: 4F F4 96 70 -> 40 F2 E8 30
 AP file offset 0xA534: 01 20       -> 00 BF
+AP file offset 0xA74E: 01 20       -> 00 BF
 ```
 
 The same changes are applied to `AP1`.
@@ -141,6 +145,7 @@ Input checks:
 - `GvLcdFwUpdate.dll` matches the known tested SHA256.
 - Offset `0xAA4A` contains `4F F4 96 70`.
 - Offset `0xA534` contains `01 20`.
+- Offset `0xA74E` contains `01 20`.
 
 Patched output checks:
 
@@ -150,13 +155,13 @@ Patched output checks:
 - staged `AP` and `AP1` have SHA256:
 
   ```text
-  FFD3ACBA17D8C338CDE7FBFAFF71DE979C7E6847CD7E577A93183BF8AE3EC737
+  046CB6D001EA6787C789E78E8103450478EAE4FAA21F00A0E4219454F7DDD333
   ```
 
 - staged `AP` and `AP1` have CRC16 over `0x28..EOF`:
 
   ```text
-  0xFFFE
+  0xCB8A
   ```
 
 Runtime checks:
@@ -190,13 +195,13 @@ DE23086EDFD6EEBEDB5E97562CEF25AE41D44531F215FF23CA434DFDD63ECB70
 Patched AP/AP1 SHA256:
 
 ```text
-FFD3ACBA17D8C338CDE7FBFAFF71DE979C7E6847CD7E577A93183BF8AE3EC737
+046CB6D001EA6787C789E78E8103450478EAE4FAA21F00A0E4219454F7DDD333
 ```
 
 Patched AP/AP1 CRC16 over `0x28..EOF`:
 
 ```text
-0xFFFE
+0xCB8A
 ```
 
 ## Build From Source

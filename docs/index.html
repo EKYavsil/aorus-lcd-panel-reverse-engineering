@@ -28,7 +28,7 @@
       </div>
       <div class="hero-content">
         <p class="eyebrow">Independent firmware reverse engineering</p>
-        <h1>AORUS LCD custom image and GIF corruption, traced to the AP firmware erase path.</h1>
+        <h1>AORUS LCD custom image and GIF corruption, traced to AP firmware flash completion handling.</h1>
         <p class="hero-copy">
           A full investigation of a GIGABYTE AORUS RTX 5080 MASTER ICE LCD panel bug where custom static images and GIFs could upload successfully but display stale, partial, black, or broken content.
         </p>
@@ -95,7 +95,7 @@
     <section id="root-cause" class="section technical">
       <div class="section-heading">
         <p class="eyebrow">Root cause</p>
-        <h2>A defective native 64 KB erase path inside the panel AP firmware.</h2>
+        <h2>Erase and page-program failures could be silently converted into success.</h2>
       </div>
       <div class="technical-grid">
         <article class="panel">
@@ -112,11 +112,19 @@
           </p>
           <pre><code>FUN_0000B4D0: native 64 KB block erase helper</code></pre>
         </article>
+        <article class="panel">
+          <h3>Page-program result also hidden</h3>
+          <p>
+            The 256-byte page-program helper used the same status poll and also forced success, even though the F1.4 upload loop checks its return before advancing.
+          </p>
+          <pre><code>FUN_0000B6CC: 256-byte page-program helper</code></pre>
+        </article>
       </div>
       <div class="code-panel">
         <p class="code-title">Validated local AP/AP1 repair for the tested firmware package</p>
         <pre><code>AP offset 0xAA4A: 4F F4 96 70 -> 40 F2 E8 30   ; timeout 300 -> 1000
-AP offset 0xA534: 01 20       -> 00 BF         ; preserve poll result</code></pre>
+AP offset 0xA534: 01 20       -> 00 BF         ; preserve 64 KB erase result
+AP offset 0xA74E: 01 20       -> 00 BF         ; preserve page-program result</code></pre>
       </div>
     </section>
 
@@ -188,9 +196,14 @@ AP offset 0xA534: 01 20       -> 00 BF         ; preserve poll result</code></pr
           <span>05</span>
           <p>Validated that repairing the native 64 KB erase path fixed both static images and custom GIFs locally.</p>
         </li>
+        <li>
+          <span>06</span>
+          <p>After one later GIF destabilized the panel, confirmed and repaired a second forced-success defect in the page-program helper. The same 5.31 MB converted GIF payload then uploaded successfully, while direct causation remains conservatively unclaimed.</p>
+        </li>
       </ol>
       <div class="link-row">
         <a href="https://github.com/EKYavsil/aorus-lcd-panel-reverse-engineering/blob/main/JOURNAL-en.md">Read the full step-by-step journal</a>
+        <a href="https://github.com/EKYavsil/aorus-lcd-panel-reverse-engineering/blob/main/docs/evidence/page-program-result-propagation-20260609.md">Page-program follow-up</a>
       </div>
     </section>
   </main>

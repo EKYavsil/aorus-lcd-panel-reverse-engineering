@@ -19,3 +19,14 @@ These scripts are included to show the research workflow and make the analysis r
 - N2a native64 timeout1000 staging.
 - Historical failed-candidate tooling retained for transparency.
 
+# Current staging tool
+
+`stage_n2b_flash_result_propagation_package.py` stages the current three-patch repair offline:
+
+```text
+BA44 timeout 300 -> 1000
+B4D0 erase-result propagation
+B6CC page-program-result propagation
+```
+
+It does not execute the updater.

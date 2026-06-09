@@ -9,6 +9,7 @@ The original static workaround avoided the AP firmware's native 64 KB erase path
 ```text
 BA44 status-poll timeout was too short for the native 64 KB erase path.
 B4D0 discarded the BA44 failure result and returned success anyway.
+B6CC also discarded the BA44 result after page programming.
 ```
 
 The successful AP firmware candidate preserved the native 64 KB path and changed only:
@@ -16,6 +17,7 @@ The successful AP firmware candidate preserved the native 64 KB path and changed
 ```text
 BA44 timeout: 300 -> 1000
 B4D0: propagate BA44 result instead of forcing success
+B6CC: propagate BA44 page-program result instead of forcing success
 ```
 
 This fixed the custom GIF path in local testing while keeping the intended `F1[0x11] == 0x02` GIF semantics.
@@ -23,6 +25,7 @@ This fixed the custom GIF path in local testing while keeping the intended `F1[0
 ## Key Reports
 
 - `reports/N2A_Native64_Timeout1000_Live_Test_Result_20260601.md`
+- `../evidence/page-program-result-propagation-20260609.md`
   - Live result for the successful native 64 KB repair candidate.
 - `reports/AP_BA44_Timeout_1000_First_Risk_Assessment_20260601.md`
   - Why the first timeout increase was limited to `1000` rather than jumping to `3000`.

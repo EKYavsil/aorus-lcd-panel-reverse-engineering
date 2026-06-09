@@ -45,3 +45,19 @@ Source-only harness:
 - `tools/firmware-harness/n2a-native64-timeout1000/`
 
 No vendor firmware blobs, patched AP images, DLLs, or live logs are included in this repository.
+
+## 2026-06-09 Follow-up
+
+After many successful static-image and GIF uploads, one GIF later destabilized the panel. Further analysis confirmed that the F1.4 `FUN_0000B6CC` page-program helper also discarded the shared BA44 status-poll result.
+
+The current repair therefore adds:
+
+```text
+B6CC: preserve BA44 page-program result instead of forcing success
+```
+
+The same previously failing GIF subsequently uploaded and played successfully with a converted `animation.bin` payload of `5,310,534` bytes. This is consistent with the repair, but the firmware update also reset panel state, so a single successful retry is not treated as conclusive causal proof.
+
+See:
+
+- `docs/evidence/page-program-result-propagation-20260609.md`

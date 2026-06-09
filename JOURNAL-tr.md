@@ -362,3 +362,35 @@ docs/gif-firmware-analysis/
 docs/evidence/gif-native64-timeout1000-success.md
 tools/firmware-harness/n2a-native64-timeout1000/
 ```
+
+## 2026-06-09: Page-Program Sonuc Aktarimi Takibi
+
+Native 64 KB onarimi ile onlarca statik gorsel ve GIF testi sorunsuz tamamlandiktan sonra bir GIF upload'i paneli kararsiz hale getirdi. Basarisiz denemede tekrar eden `GvWriteI2C fail` ve `SendImage SendData Image Byte fail` kayitlari olustu.
+
+Yeni inceleme F1.4 icindeki 256-byte page-program helper'a odaklandi. `FUN_0000B6CC`, ortak `FUN_0000BA44` status/WIP poll helper'ini cagiriyor; ancak hemen sonraki komut `r0 = 1` yazarak sonucu zorla basariliya ceviriyor. F1.4 upload dongusu adresi ve kalan sayfa sayisini ilerletmeden once bu return degerini kontrol ettigi icin, forced-success komutu caller tarafinda acikca tasarlanmis hata yolunu etkisiz hale getiriyor.
+
+Firmware onarimi iki degisiklikten uc degisiklige genisletildi:
+
+```text
+BA44 timeout: 300 -> 1000
+B4D0: 64 KB erase poll sonucunu koru
+B6CC: 256-byte page-program poll sonucunu koru
+```
+
+Ek byte patch:
+
+```text
+AP/AP1 file offset 0xA74E: 01 20 -> 00 BF
+```
+
+Yeni AP/AP1 payload SHA256 degeri `046CB6D001EA6787C789E78E8103450478EAE4FAA21F00A0E4219454F7DDD333`, `0x28..EOF` CRC16 degeri ise `0xCB8A` oldu. Firmware update basariyla tamamlandi ve panel toparlandi.
+
+Daha once paneli bozan ayni GIF tekrar yuklendi. Donusturulmus panel payload'u `5,310,534` byte idi ve bu kez yeni I2C, SendImage, .NET veya uygulama crash kaydi olmadan sorunsuz yuklenip oynadi.
+
+Bu basarili tekrar yeni page-program sonuc aktarimi onarimi ile uyumludur; ancak tek basina dogrudan nedenselligi kanitlamaz. Firmware yeniden yazimi panel/controller state'ini de sifirladi ve basarili denemede host tarafindan gorulebilen bir page-program timeout kaydi yakalanmadi. Kesin olan muhendislik hatasi forced-success komutudur; bu komutun kaldirilmasinin tek basarili tekrar uzerindeki etkisi guclu olasilik olarak kaydedilmistir, kesin kanit olarak degil.
+
+Tam rapor:
+
+```text
+docs/evidence/page-program-result-propagation-20260609.md
+```

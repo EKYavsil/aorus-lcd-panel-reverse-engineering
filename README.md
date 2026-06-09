@@ -28,7 +28,7 @@ The observed issue affected custom LCD media uploaded through GIGABYTE Control C
 - Custom GIFs could upload but display incorrectly, freeze, stay on loading, or leave the panel in an inconsistent state.
 - Built-in/default LCD modes could still display correctly.
 
-The investigation indicates that the panel-side AP firmware has a defective native 64 KB flash erase path. The local repair patches the AP firmware payload so the native 64 KB erase path waits longer and no longer hides status-poll failure from the caller.
+The investigation indicates that the panel-side AP firmware has defective flash-operation completion handling. The local repair makes the native 64 KB erase path wait longer and prevents both 64 KB erase and 256-byte page programming from hiding status-poll failure from their callers.
 
 This repository contains:
 
@@ -105,18 +105,20 @@ If you have the required reverse-engineering and firmware-safety experience, the
 
 ## Root Cause Summary
 
-Two AP firmware sites were identified as central to the issue:
+Three AP firmware sites were identified as central to the issue:
 
 ```text
 FUN_0000BA44: SPI status/WIP poll helper
 FUN_0000B4D0: native 64 KB block erase helper
+FUN_0000B6CC: 256-byte page-program helper
 ```
 
-The bug has two parts:
+The bug has three parts:
 
 ```text
 BA44 polls erase completion with timeout 300, which is too short for the observed 64 KB erase path.
 B4D0 calls BA44 after issuing a 0xD8 64 KB erase, then overwrites the result with success.
+B6CC calls BA44 after a 0x02 page-program operation, then also overwrites the result with success.
 ```
 
 The local repair changes:
@@ -124,6 +126,7 @@ The local repair changes:
 ```text
 AP file offset 0xAA4A: 4F F4 96 70 -> 40 F2 E8 30   ; BA44 timeout 300 -> 1000
 AP file offset 0xA534: 01 20       -> 00 BF         ; B4D0 no longer forces success
+AP file offset 0xA74E: 01 20       -> 00 BF         ; B6CC no longer forces success
 ```
 
 The same changes are applied to `AP1`.
@@ -139,6 +142,8 @@ Do not manually apply these offsets to other firmware versions. These offsets ar
 - Built and tested a temporary static-image host workaround, then superseded it with the AP firmware root-cause fix.
 - Mapped the AP firmware native 64 KB erase helper and identified the short timeout/failure-masking defect.
 - Verified the native AP repair in local testing.
+- Confirmed a second forced-success defect in the page-program helper and tested a three-patch firmware build after one later GIF upload destabilized the panel.
+- Re-uploaded the same previously failing GIF successfully with a 5,310,534-byte converted payload; this supports the repair but does not alone prove that the third patch caused the successful retry.
 
 ## Repository Layout
 
@@ -164,6 +169,8 @@ Useful starting points:
 - [Firmware patcher guide](FIRMWARE_PATCHER.md)
 - [Safety notes](SAFETY.md)
 - [Native 64 KB timeout success evidence](docs/evidence/gif-native64-timeout1000-success.md)
+- [Page-program result propagation follow-up](docs/evidence/page-program-result-propagation-20260609.md)
+- [Current N2B dry-run verifier](tools/firmware-harness/n2b-flash-result-propagation/)
 - [GIF firmware analysis summary](docs/gif-firmware-analysis/GIF_Issue_Public_Research_Summary.md)
 - [External protocol references](docs/research-log/EXTERNAL_PROTOCOL_REFERENCES.md)
 - [Offline artifact review](docs/research-log/OFFLINE_ARTIFACT_REVIEW_20260602.md)

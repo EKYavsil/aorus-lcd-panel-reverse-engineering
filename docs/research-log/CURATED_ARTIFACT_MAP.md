@@ -10,7 +10,7 @@ This repository keeps the useful public-facing parts of the investigation while 
   - Root-level .NET project for the AP firmware payload patcher.
 - `src/Program.cs`
   - Source for the guarded AP/AP1 patcher.
-  - Applies the native 64 KB erase repair: `BA44` timeout `300 -> 1000` and `B4D0` return propagation.
+  - Applies the current flash-operation repair: `BA44` timeout `300 -> 1000`, `B4D0` erase-result propagation, and `B6CC` page-program-result propagation.
 - GitHub Release asset: `AorusLcdFirmwarePatcher-win-x64-self-contained.exe`
   - Optional runtime-free convenience executable.
   - It is generated from the public source, does not contain GIGABYTE firmware files, and is not committed because the self-contained build is large.
@@ -19,7 +19,9 @@ This repository keeps the useful public-facing parts of the investigation while 
 - `SAFETY.md`
   - Firmware safety boundaries and risk notes.
 - `docs/evidence/gif-native64-timeout1000-success.md`
-  - Records the successful local AP firmware repair result.
+  - Records the original successful native 64 KB timeout/erase-result repair.
+- `docs/evidence/page-program-result-propagation-20260609.md`
+  - Records the page-program defect, three-patch firmware update, and controlled evidence limits.
 - `JOURNAL-en.md`
   - English narrative summary of the investigation path.
 - `JOURNAL-tr.md`
@@ -33,7 +35,9 @@ This repository keeps the useful public-facing parts of the investigation while 
 - `tools/firmware-analysis/`
   - Offline scripts used for AP hash/CRC analysis, firmware delivery mapping, erase-window checks, and staging verification.
 - `tools/firmware-harness/n2a-native64-timeout1000/`
-  - Source code for the controlled N2a firmware harness.
+  - Historical source-only dry-run verifier for the original two-patch N2a build.
+- `tools/firmware-harness/n2b-flash-result-propagation/`
+  - Current source-only dry-run verifier for all three patch sites.
   - No AP/AP1 blobs, vendor DLLs, compiled binaries, or live logs are included.
 - `tools/host-analysis/byte-command-scanner/`
   - Source for the managed host assembly command-byte scanner.

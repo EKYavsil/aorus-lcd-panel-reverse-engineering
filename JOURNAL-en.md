@@ -363,3 +363,35 @@ docs/gif-firmware-analysis/
 docs/evidence/gif-native64-timeout1000-success.md
 tools/firmware-harness/n2a-native64-timeout1000/
 ```
+
+## 2026-06-09: Page-Program Result Propagation Follow-up
+
+After dozens of successful static-image and GIF tests with the native 64 KB repair, one GIF upload destabilized the panel. The failed attempt produced repeated `GvWriteI2C fail` and `SendImage SendData Image Byte fail` entries.
+
+The next investigation focused on the F1.4 256-byte page-program helper. `FUN_0000B6CC` calls the shared `FUN_0000BA44` status/WIP poll helper, but the instruction immediately after the call forces `r0 = 1`. The F1.4 upload loop checks this return before advancing its page address, so the forced-success instruction defeats an error path that the caller expects to use.
+
+The firmware repair was extended from two changes to three:
+
+```text
+BA44 timeout: 300 -> 1000
+B4D0: preserve the 64 KB erase poll result
+B6CC: preserve the 256-byte page-program poll result
+```
+
+The additional byte patch is:
+
+```text
+AP/AP1 file offset 0xA74E: 01 20 -> 00 BF
+```
+
+The resulting AP/AP1 payload has SHA256 `046CB6D001EA6787C789E78E8103450478EAE4FAA21F00A0E4219454F7DDD333` and CRC16 `0xCB8A` over `0x28..EOF`. The firmware update completed successfully and the panel recovered.
+
+The same GIF that had triggered the failure was then uploaded again. Its converted panel payload was `5,310,534` bytes, and it uploaded and played correctly without new I2C, SendImage, .NET, or application crash records.
+
+This successful retry is consistent with the new page-program result-propagation repair, but it is not enough to prove direct causation. Reflashing also reset panel/controller state, and the successful attempt did not expose a host-visible page-program timeout. The confirmed engineering defect is the forced-success instruction; the exact contribution of its removal to this single retry remains cautiously classified as strongly plausible rather than proven.
+
+Full report:
+
+```text
+docs/evidence/page-program-result-propagation-20260609.md
+```

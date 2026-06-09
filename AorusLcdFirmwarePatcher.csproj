@@ -7,6 +7,9 @@
     <Nullable>enable</Nullable>
     <AssemblyName>AorusLcdFirmwarePatcher</AssemblyName>
     <RootNamespace>AorusLcdFirmwarePatcher</RootNamespace>
+    <Version>1.1.0</Version>
+    <FileVersion>1.1.0.0</FileVersion>
+    <AssemblyVersion>1.1.0.0</AssemblyVersion>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
 
