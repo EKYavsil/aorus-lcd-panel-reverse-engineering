@@ -3,8 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Reverse-engineering notes and firmware repair details for the AORUS RTX 5080 MASTER ICE LCD custom image and GIF corruption bug.">
-  <title>AORUS LCD Panel Reverse Engineering</title>
+  <meta name="description" content="AORUS LCD panel bug fix and firmware reverse-engineering investigation for GIGABYTE Control Center custom image upload problems, black or partial LCD screen updates, stale images, frozen GIFs, and corrupted panel content on the RTX 5080 AORUS MASTER ICE LCD panel.">
+  <meta property="og:title" content="AORUS LCD Panel Bug Fix — Firmware Reverse Engineering of Black Screen & GIF Corruption">
+  <meta property="og:description" content="Investigation and local firmware repair for a GIGABYTE AORUS LCD panel issue where custom images and GIFs upload successfully but display black, partial, stale, frozen, or corrupted content.">
+  <meta name="twitter:title" content="AORUS LCD Panel Bug Fix — Firmware Reverse Engineering">
+  <meta name="twitter:description" content="AORUS LCD custom image black screen, GIF corruption, and GIGABYTE Control Center LCD issue investigation with a guarded firmware repair tool.">
+  <title>AORUS LCD Panel Bug Fix — Firmware Reverse Engineering of Black Screen & GIF Corruption</title>
   <link rel="stylesheet" href="assets/site.css">
 </head>
 <body>
@@ -12,6 +16,7 @@
     <nav class="nav" aria-label="Primary navigation">
       <a class="brand" href="#top">AORUS LCD RE</a>
       <div class="nav-links">
+        <a href="#symptoms">Symptoms</a>
         <a href="#evidence">Evidence</a>
         <a href="#root-cause">Root Cause</a>
         <a href="#repair">Repair</a>
@@ -24,13 +29,13 @@
   <main id="top">
     <section class="hero">
       <div class="hero-media" aria-hidden="true">
-        <img src="evidence/images/after-repair.jpg" alt="">
+        <img src="evidence/images/ba.png" alt="">
       </div>
       <div class="hero-content">
-        <p class="eyebrow">Independent firmware reverse engineering</p>
-        <h1>AORUS LCD custom image and GIF corruption, traced to AP firmware flash completion handling.</h1>
+        <p class="eyebrow">AORUS LCD panel bug fix</p>
+        <h1>AORUS LCD Panel Bug Fix and Firmware Reverse Engineering</h1>
         <p class="hero-copy">
-          A full investigation of a GIGABYTE AORUS RTX 5080 MASTER ICE LCD panel bug where custom static images and GIFs could upload successfully but display stale, partial, black, or broken content.
+          A full investigation of a GIGABYTE AORUS RTX 5080 MASTER ICE LCD panel bug where GIGABYTE Control Center custom image and GIF uploads appeared successful, but the AORUS LCD screen could stay black, partially updated, stale, frozen, or corrupted.
         </p>
         <div class="hero-actions">
           <a class="button primary" href="#root-cause">Read the technical finding</a>
@@ -54,10 +59,42 @@
       </div>
     </section>
 
+    <section id="symptoms" class="section technical">
+      <div class="section-heading">
+        <p class="eyebrow">Symptoms</p>
+        <h2>AORUS LCD custom image and GIF uploads can look successful while the panel stays broken.</h2>
+      </div>
+      <div class="technical-grid">
+        <article class="panel">
+          <h3>Custom image black screen</h3>
+          <p>
+            Static image uploads can update only the upper part of the AORUS LCD panel while the lower region stays black, stale, or incomplete.
+          </p>
+        </article>
+        <article class="panel">
+          <h3>Corrupted or partial LCD image</h3>
+          <p>
+            GIGABYTE Control Center can report a successful upload even when the panel displays corrupted, partially erased, or stale custom image content.
+          </p>
+        </article>
+        <article class="panel">
+          <h3>GIF upload freezes or stays on loading</h3>
+          <p>
+            Custom GIF uploads can freeze, stay on a loading state, show corrupted frames, or leave the LCD controller in an inconsistent state.
+          </p>
+        </article>
+      </div>
+      <div class="text-block">
+        <p>
+          Temporary workarounds such as reinstalling GIGABYTE Control Center, reinstalling LCD firmware, clearing caches, or switching LCD modes may disturb the state, but the same AORUS LCD issue can return if the underlying firmware-side flash operation fails silently.
+        </p>
+      </div>
+    </section>
+
     <section class="section intro">
       <div class="section-heading">
         <p class="eyebrow">What happened</p>
-        <h2>The upload path looked successful, but the panel flash state was not reliable.</h2>
+        <h2>The AORUS LCD image upload looked successful, but the screen stayed black, stale, or corrupted.</h2>
       </div>
       <div class="text-block">
         <p>
@@ -146,7 +183,7 @@ AP offset 0xA74E: 01 20       -> 00 BF         ; preserve page-program result</c
     <section id="repair" class="section repair">
       <div class="section-heading">
         <p class="eyebrow">Repair tool</p>
-        <h2>A guarded Windows repair tool built around official local firmware files.</h2>
+        <h2>A guarded Windows repair tool for the AORUS LCD black screen, corrupted image, and GIF issue.</h2>
       </div>
       <div class="repair-list">
         <div>
@@ -167,6 +204,47 @@ AP offset 0xA74E: 01 20       -> 00 BF         ; preserve page-program result</c
         <a href="https://github.com/EKYavsil/aorus-lcd-panel-reverse-engineering/blob/main/FIRMWARE_PATCHER.md">Firmware patcher guide</a>
         <a href="https://github.com/EKYavsil/aorus-lcd-panel-reverse-engineering/blob/main/SAFETY.md">Safety notes</a>
         <a href="https://github.com/EKYavsil/aorus-lcd-panel-reverse-engineering/blob/main/GIGABYTE_BUG_REPORT.md">Vendor-facing report</a>
+      </div>
+    </section>
+
+    <section class="section technical" id="faq">
+      <div class="section-heading">
+        <p class="eyebrow">FAQ</p>
+        <h2>Common questions about the AORUS LCD panel bug and repair.</h2>
+      </div>
+      <div class="technical-grid">
+        <article class="panel">
+          <h3>Does this fix the AORUS LCD black screen issue?</h3>
+          <p>
+            For the tested GIGABYTE AORUS RTX 5080 MASTER ICE LCD panel and official LCD firmware 1.4 package, the local AP firmware repair fixed the static custom image corruption and the custom GIF corruption observed during testing.
+          </p>
+        </article>
+        <article class="panel">
+          <h3>Why does GIGABYTE Control Center say the upload succeeded while the LCD image is broken?</h3>
+          <p>
+            The Windows-side upload path can report success while the panel-side AP firmware erase/write path leaves stale, incomplete, or corrupted flash content behind.
+          </p>
+        </article>
+        <article class="panel">
+          <h3>Is this a general GIGABYTE Control Center LCD bug?</h3>
+          <p>
+            My personal assessment, based on my investigation so far, is that this may be a broader recurring issue affecting other AORUS LCD panel models as well. However, my validation and repair testing apply only to the AORUS RTX 5080 MASTER ICE firmware package tested in this repository. Other panels should be analyzed separately using the research material and tooling provided here. The most important area to inspect first is the firmware erase/write path, especially the 64 KB erase path and its completion/status handling.
+          </p>
+        </article>
+        <article class="panel">
+          <h3>Is the firmware patcher safe to use?</h3>
+          <p>
+            On my own machine, I have repeatedly uploaded custom images and GIFs after the repair without encountering any further issues, and the LCD panel has continued to work normally. However, flashing firmware is inherently risky. The patcher attempts to apply the necessary safety checks before flashing, but all responsibility remains with the user. If you are not experienced with firmware flashing or reverse-engineering workflows, consider asking an AI assistant or another technical reviewer to analyze this repository with you before proceeding.
+          </p>
+        </article>
+      </div>
+      <div class="text-block">
+        <p>
+          Search terms that may describe this problem include AORUS LCD panel bug, AORUS LCD black screen issue, GIGABYTE Control Center LCD problem, corrupted custom image upload, frozen GIF upload, and partial LCD screen update.
+        </p>
+        <p>
+          This repository does not redistribute proprietary GIGABYTE firmware images, DLLs, installers, extracted packages, raw traces, or patched vendor binaries.
+        </p>
       </div>
     </section>
 
@@ -209,7 +287,7 @@ AP offset 0xA74E: 01 20       -> 00 BF         ; preserve page-program result</c
   </main>
 
   <footer class="site-footer">
-    <p>Independent reverse-engineering project. Not affiliated with or endorsed by GIGABYTE.</p>
+    <p>Independent AORUS LCD panel bug fix and firmware reverse-engineering project. Not affiliated with or endorsed by GIGABYTE.</p>
     <p><a href="https://github.com/EKYavsil/aorus-lcd-panel-reverse-engineering">Repository</a></p>
   </footer>
 </body>
